@@ -32,6 +32,6 @@ currently, only a simple interpreter that supports only numbers (doubles) is imp
 
 ### TODO:
 * parse operators other than `+` and `*` (simple to fix, but im lazy).
-* add if and lops
+* add if and loops
 * change from `double` to some kind of `obj_t` for the interpreter.
 * add strings.
