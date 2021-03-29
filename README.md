@@ -6,10 +6,13 @@ written in C.
 ### Example:
 ```js
 let a = 12 * (4 + 3)
-a
-```
+let output = a + 2
+if output == 0 then
+    output = output + 1
+else
+    output = a - 20
 
-this will print `84`
+```
 
 ### Usage:
 ```sh
@@ -18,6 +21,7 @@ $ microl run example.microl
 # This will run example.microl
 
 ```
+The value printed is the value of the `output` variable.
 
 ### Source
 
