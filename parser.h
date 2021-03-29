@@ -60,9 +60,11 @@ node_t *parser_error(parser_t *p, char *msg)
 
 
 node_t *parse_atom(parser_t *p);
-node_t *parse_expr(parser_t *p);
 node_t *parse_mul(parser_t *p);
 node_t *parse_add(parser_t *p);
+node_t *parse_cmp(parser_t *p);
+node_t *parse_eql(parser_t *p);
+node_t *parse_expr(parser_t *p);
 
 node_t *parse_atom(parser_t *p)
 {
@@ -71,6 +73,8 @@ node_t *parse_atom(parser_t *p)
 	dparse_printf("val: '%s'\n", tok.value);
 	switch(tok.type)
 	{
+		// case tt_eof:
+		// 	return NULL;
 		case tt_num:
 			dparse_printf("parse atom ret \"%s\"\n", tok.value);
 			return (node_t*)create_num_node(atoi(tok.value));
@@ -88,6 +92,7 @@ node_t *parse_atom(parser_t *p)
 		}
 		default:
 			dparse_puts("parse atom err");
+			dparse_printf(" ___ got: \"%s\"\n/\nv\n", tok.value);
 			return parser_error(p, "expected an atom");
 	}
 }
@@ -125,6 +130,59 @@ node_t *parse_add(parser_t *p)
 	return lhs;
 }
 
+
+node_t *parse_cmp(parser_t *p)
+{
+	dparse_puts("parse cmp");
+	node_t *lhs = parse_add(p);
+	token_t t = p_peek(p);
+	while(t.type == tt_grt || t.type == tt_lst)
+	{
+		p_del(p);
+		dparse_puts("parse cmp loop");
+		lhs = (node_t*)create_bin_node(
+			t.type == tt_grt ? bin_op_grt : bin_op_lst,
+			lhs, parse_add(p));
+		t = p_peek(p);
+	}
+	dparse_puts("parse cmp ret");
+	return lhs;
+}
+
+
+node_t *parse_eql(parser_t *p)
+{
+	node_t *lhs = parse_cmp(p);
+	token_t t = p_peek(p);
+	while(t.type == tt_ieq || t.type == tt_neq)
+	{
+		p_del(p);
+		dparse_puts("parse eql loop");
+		lhs = (node_t*)create_bin_node(
+			t.type == tt_ieq ? bin_op_ieq : bin_op_neq,
+			lhs, parse_cmp(p));
+		t = p_peek(p);
+	}
+	dparse_puts("parse eql ret");
+	return lhs;
+}
+
+node_seq_t *parse_seq(parser_t *p, token_t end)
+{
+	node_seq_t *seq = create_seq_node();
+	for(;;)
+	{
+		token_t t = p_peek(p);
+		if(t.type == end.type && strcmp(t.value, end.value) == 0)
+			break;
+
+		node_t *n = parse_expr(p);
+		if(n) node_seq_add_node(seq, n);
+	}
+	return seq;
+}
+
+
 node_t *parse_expr(parser_t *p)
 {
 	token_t tok = p_peek(p);
@@ -139,6 +197,7 @@ node_t *parse_expr(parser_t *p)
 			token_t var = p_get(p);
 			if(var.type != tt_var)
 				return parser_error(p, "expected the name of the variable.");
+			dparse_printf("var: %s\n", var.value);
 			if(p_get(p).type != tt_eql)
 				return parser_error(p, "expected an equals sign.");
 
@@ -146,20 +205,63 @@ node_t *parse_expr(parser_t *p)
 			return (node_t*)create_let_node(var.value, expr);
 
 		}
+
+		if(strcmp(tok.value, "do") == 0)
+		{
+			// "do" seq "end"
+			p_del(p); // skip "do"
+
+			node_t *n = (node_t*)parse_seq(p, (token_t){ "end", tt_var });
+
+			p_del(p); // if parse_seq ended, the next token is "end"!
+			return n;
+		}
+
+		if(strcmp(tok.value, "if") == 0)
+		{
+			// "if" expr "then" expr ?
+			//                       \____ $
+			//                       \____ "else" expr
+
+			p_del(p); // skip "if"
+
+			node_t *cond = parse_expr(p);
+
+			if(strcmp(p_get(p).value, "then") != 0)
+			{
+				free_node(cond);
+				return parser_error(p, "expected 'then'");
+			}
+
+			node_t *body = parse_expr(p);
+
+			node_t *otherwise = NULL;
+			if(strcmp(p_peek(p).value, "else") == 0)
+			{
+				p_del(p);
+				otherwise = parse_expr(p);
+			}
+
+			return (node_t*)create_iff_node(cond, body, otherwise);
+		}
+
+		if(p->ptr && p->ptr->next && p->ptr->next->token.type == tt_eql)
+		{
+			node_set_t *n = create_set_node(tok.value, NULL);
+			p_del(p); p_del(p);
+			n->value = parse_expr(p);
+			return (node_t*)n;
+		}
 	}
-	return parse_add(p);
+	return parse_eql(p);
 }
+
+
 
 node_t *parse(parser_t *p)
 {
 	dparse_puts("parse");
-	node_seq_t *seq = create_seq_node();
-	while(p_peek(p).type != tt_eof)
-	{
-		node_t *n = parse_expr(p);
-		if(n) node_seq_add_node(seq, n);
-	}
-	return (node_t*)seq;
+	return (node_t*)parse_seq(p, token_eof());
 }
 
 #endif//MICROL_PARSER_H

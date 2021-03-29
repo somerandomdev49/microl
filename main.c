@@ -50,7 +50,11 @@ void run(const char *filename)
 	if(!parser.fail)
 	{
 		eval_node(n, &ctx);
-		printf("%f\n", get_var(&ctx, "a")->value);
+		var_t *output = get_var(&ctx, "output");
+		if(output)
+			printf("%f\n", output->value);
+		else
+			fprintf(stderr, "No variable with name \"output\" found!\n");
 	}
 
 	free_context(&ctx);

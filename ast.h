@@ -10,6 +10,7 @@ typedef enum
 {
 	nt_num, nt_var, nt_str,
 	nt_bin, nt_let, nt_seq,
+	nt_set, nt_iff, nt_for,
 } node_type_t;
 
 typedef struct
@@ -78,6 +79,12 @@ typedef struct
 		bin_op_mod,
 		bin_op_and,
 		bin_op_cor,
+		bin_op_ieq,
+		bin_op_neq,
+		bin_op_grt,
+		bin_op_lst,
+		bin_op_gte,
+		bin_op_lte,
 	} value;
 } node_bin_t;
 
@@ -113,6 +120,53 @@ node_let_t *create_let_node(char *name, node_t *value)
 	memcpy(n->name, name, len);
 	return n;
 }
+
+
+
+
+// IFF NODE //
+
+typedef struct
+{
+	node_t node;
+	node_t *cond, *body, *otherwise;
+} node_iff_t;
+
+node_iff_t *create_iff_node(node_t *cond, node_t *body, node_t *otherwise)
+{
+	node_iff_t *n = alloc_node(iff);
+	n->node.type = nt_iff;
+	n->cond = cond;
+	n->body = body;
+	n->otherwise = otherwise;
+	return n;
+}
+
+
+
+
+
+// SET NODE //
+
+typedef struct
+{
+	node_t node;
+	char *name;
+	node_t *value;
+} node_set_t;
+
+node_set_t *create_set_node(char *name, node_t *value)
+{
+	node_set_t *n = alloc_node(set);
+	n->node.type = nt_set;
+	n->value = value;
+
+	size_t len = strlen(name) + 1; // null-terminator included!
+	n->name = malloc(len);
+	memcpy(n->name, name, len);
+	return n;
+}
+
 
 
 
@@ -169,6 +223,8 @@ void node_seq_del_all(node_seq_t *seq)
 }
 
 
+
+
 // GENERAL //
 
 void free_node(node_t *node)
@@ -191,9 +247,26 @@ void free_node(node_t *node)
 			free(node);
 			break;
 		}
+		case nt_iff:
+		{
+			node_iff_t* ni = (node_iff_t*)node;
+			free_node(ni->cond);
+			free_node(ni->body);
+			free_node(ni->otherwise);
+			free(node);
+			break;
+		}
 		case nt_let:
 		{
 			node_let_t* nl = (node_let_t*)node;
+			free(nl->name);
+			free_node(nl->value);
+			free(node);
+			break;
+		}
+		case nt_set:
+		{
+			node_set_t* nl = (node_set_t*)node;
 			free(nl->name);
 			free_node(nl->value);
 			free(node);

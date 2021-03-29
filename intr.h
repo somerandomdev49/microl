@@ -87,12 +87,29 @@ double eval_node(node_t *node, ctx_t *ctx)
 
 			return v->value;
 		}
+		case nt_set:
+		{
+			node_set_t* ns = (node_set_t*)node;
+			double val = eval_node(ns->value, ctx);
+			get_var(ctx, ns->name)->value = val;
+			return val;
+		}
 		case nt_let:
 		{
 			node_let_t* nl = (node_let_t*)node;
 			double val = eval_node(nl->value, ctx);
 			add_var(ctx, create_var(nl->name, val));
 			return val;
+		}
+		case nt_iff:
+		{
+			node_iff_t* ni = (node_iff_t*)node;
+			if(eval_node(ni->cond, ctx))
+				return eval_node(ni->body, ctx);
+			else if(ni->otherwise)
+				return eval_node(ni->otherwise, ctx);
+			return -1;
+			break;
 		}
 		case nt_seq:
 		{
@@ -117,6 +134,32 @@ double eval_node(node_t *node, ctx_t *ctx)
 				case bin_op_mul:
 					return eval_node(nb->lhs, ctx) *
 						   eval_node(nb->rhs, ctx);
+				case bin_op_sub:
+					return eval_node(nb->lhs, ctx) -
+						   eval_node(nb->rhs, ctx);
+				case bin_op_div:
+					return eval_node(nb->lhs, ctx) /
+						   eval_node(nb->rhs, ctx);
+				case bin_op_ieq:
+					return eval_node(nb->lhs, ctx) ==
+						   eval_node(nb->rhs, ctx);
+				case bin_op_neq:
+					return eval_node(nb->lhs, ctx) !=
+						   eval_node(nb->rhs, ctx);
+				case bin_op_grt:
+					return eval_node(nb->lhs, ctx) >
+						   eval_node(nb->rhs, ctx);
+				case bin_op_lst:
+					return eval_node(nb->lhs, ctx) <
+						   eval_node(nb->rhs, ctx);
+				case bin_op_lte:
+					return eval_node(nb->lhs, ctx) >=
+						   eval_node(nb->rhs, ctx);
+				case bin_op_gte:
+					return eval_node(nb->lhs, ctx) <=
+						   eval_node(nb->rhs, ctx);
+				//
+
 				default:
 					fprintf(stderr, "error: eval -> bin op not implemented.\n");
 					return -1;
