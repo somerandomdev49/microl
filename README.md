@@ -43,3 +43,5 @@ The value printed is the value of the `output` variable.
 * [x] ~~add if and loops~~
 * [x] ~~change from `double` to some kind of `obj_t` for the interpreter.~~
 * [ ] add strings.
+* [ ] add parser support for nil.
+* [ ] add functions.
