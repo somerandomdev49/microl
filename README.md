@@ -4,14 +4,20 @@
 written in C.
 
 ### Example:
-```js
-let a = 12 * (4 + 3)
-let output = a + 2
-if output == 0 then
-    output = output + 1
-else
-    output = a - 20
+```lua
+let output = 0
+let i = 1
+while i < 10 do
+    let j = 0
 
+    while j < 10 do
+        output = output + j * i
+        if j == 5 then break
+        j = j + 1
+    end
+    i = i + 1
+end
+0
 ```
 
 ### Usage:
