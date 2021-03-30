@@ -12,7 +12,7 @@ typedef enum
 	nt_bin, nt_let, nt_seq,
 	nt_set, nt_iff, nt_for,
 	nt_brk, nt_ret, nt_cll,
-	nt_fun, // TODO!
+	nt_fun, nt_dbg, //TODO!
 } node_type_t;
 
 typedef struct
@@ -201,6 +201,26 @@ node_ret_t *create_ret_node(node_t *value)
 
 
 
+
+// DBG NODE //
+
+typedef struct
+{
+	node_t node;
+	node_t *value;
+} node_dbg_t;
+
+node_dbg_t *create_dbg_node(node_t *value)
+{
+	node_dbg_t *n = alloc_node(dbg);
+	n->node.type = nt_dbg;
+	n->value = value;
+	return n;
+}
+
+
+
+
 // SET NODE //
 
 typedef struct
@@ -289,20 +309,26 @@ void free_node(node_t *node)
 	if(!node) return;
 	switch(node->type)
 	{
-		case nt_num: free(node); break;
-		case nt_brk: free(node); break;
+		case nt_num:
+		case nt_brk: break;
+
+		case nt_ret:
+		case nt_dbg:
+		{
+			node_dbg_t* ng = (node_dbg_t*)node;
+			free_node(ng->value);
+			break;
+		}
 		case nt_var:
 		{
 			node_var_t* nv = (node_var_t*)node;
 			free(nv->value);
-			free(node);
 			break;
 		}
 		case nt_seq:
 		{
 			node_seq_t* nl = (node_seq_t*)node;
 			node_seq_del_all(nl);
-			free(node);
 			break;
 		}
 		case nt_iff:
@@ -311,7 +337,6 @@ void free_node(node_t *node)
 			free_node(ni->cond);
 			free_node(ni->body);
 			free_node(ni->otherwise);
-			free(node);
 			break;
 		}
 		case nt_for:
@@ -319,7 +344,6 @@ void free_node(node_t *node)
 			node_for_t* nr = (node_for_t*)node;
 			free_node(nr->cond);
 			free_node(nr->body);
-			free(node);
 			break;
 		}
 		case nt_let:
@@ -327,7 +351,6 @@ void free_node(node_t *node)
 			node_let_t* nl = (node_let_t*)node;
 			free(nl->name);
 			free_node(nl->value);
-			free(node);
 			break;
 		}
 		case nt_set:
@@ -335,20 +358,20 @@ void free_node(node_t *node)
 			node_set_t* nl = (node_set_t*)node;
 			free(nl->name);
 			free_node(nl->value);
-			free(node);
 			break;
 		}
 		case nt_bin:
 		{
 			node_bin_t* nb = (node_bin_t*)node;
-			free_node(nb->lhs); free_node(nb->rhs);
-			free(node);
+			free_node(nb->lhs);
+			free_node(nb->rhs);
 			break;
 		}
 		default:
 			fprintf(stderr, "error: free -> not implemented %d.\n", node->type);
 			break;
 	}
+	free(node);
 }
 
 #endif//MICROL_AST_H

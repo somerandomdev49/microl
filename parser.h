@@ -261,6 +261,16 @@ node_t *parse_expr(parser_t *p)
 			return (node_t*)create_brk_node();
 		}
 
+		if(strcmp(tok.value, "debug") == 0)
+		{
+			// "break"
+
+			p_del(p); // skip "debug"
+			node_t *expr = parse_expr(p);
+
+			return (node_t*)create_dbg_node(expr);
+		}
+
 
 		if(p->ptr && p->ptr->next && p->ptr->next->token.type == tt_eql)
 		{

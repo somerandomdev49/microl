@@ -35,7 +35,7 @@ currently, only a simple interpreter that supports only numbers (doubles) is imp
 * `main.c` - the main file. (cli + running)
 
 ### TODO:
-* parse operators other than `+` and `*` (simple to fix, but im lazy).
-* add if and loops
-* change from `double` to some kind of `obj_t` for the interpreter.
-* add strings.
+* [x] parse operators other than `+` and `*` (simple to fix, but im lazy).
+* [x] add if and loops
+* [ ] change from `double` to some kind of `obj_t` for the interpreter.
+* [ ] add strings.

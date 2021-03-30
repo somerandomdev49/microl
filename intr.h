@@ -50,6 +50,15 @@ void free_context(ctx_t *ctx)
 	ctx->count = 0;
 }
 
+ctx_t *context_get_loop(ctx_t *ctx)
+{
+	if(ctx->in_loop)
+		return ctx;
+	if(ctx->parent)
+		return context_get_loop(ctx->parent);
+	return NULL;
+}
+
 var_t *get_var(ctx_t *ctx, char *name)
 {
 	for(size_t i = 0; i < ctx->count; ++i)
@@ -126,9 +135,19 @@ double eval_node(node_t *node, ctx_t *ctx)
 			return -1;
 		}
 		case nt_brk:
-			if(ctx->in_loop) ctx->in_loop = 0;
+		{
+			ctx_t *lctx = context_get_loop(ctx);
+			if(lctx) lctx->in_loop = false;
 			else fprintf(stderr, "error: eval -> break not inside loop.\n");
 			return -1;
+		}
+		case nt_ret:
+		case nt_dbg:
+		{
+			node_dbg_t* ng = (node_dbg_t*)node;
+		 	printf("[debug] -> %f\n", eval_node(ng->value, ctx));
+			return -1;
+		}
 		case nt_for:
 		{
 			dintr_puts("m");
