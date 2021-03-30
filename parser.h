@@ -8,12 +8,14 @@
 
 #define dparse_printf(...) //printf(__VA_ARGS__)
 #define dparse_puts(...) //puts(__VA_ARGS__)
+
 typedef struct
 {
 	token_list_t *toks;
 	struct token_list_cell_t *ptr, *last;
 	bool fail;
 } parser_t;
+char *copy_string(const char *other);
 
 parser_t create_parser(token_list_t *toks)
 {
@@ -64,6 +66,31 @@ node_t *parse_cmp(parser_t *p);
 node_t *parse_eql(parser_t *p);
 node_t *parse_expr(parser_t *p);
 
+
+typedef struct
+{
+	size_t count;
+	void **data;
+} ptr_list_t;
+
+ptr_list_t create_ptr_list()
+{ return (ptr_list_t){ 0, malloc(0) }; }
+
+void ptr_list_add(ptr_list_t *l, void *v)
+{
+	l->data = realloc(l->data, ++l->count);
+	l->data[l->count - 1] = v;
+}
+
+void free_ptr_list(ptr_list_t *l, void (*free_f)(void*))
+{
+	if(free_f)
+		for(size_t i = 0; i < l->count; ++l)
+			free_f(l->data[i]);
+	free(l->data);
+}
+
+
 node_t *parse_atom(parser_t *p)
 {
 	dparse_puts("parse atom");
@@ -95,16 +122,63 @@ node_t *parse_atom(parser_t *p)
 	}
 }
 
+
+ptr_list_t parse_cargs(parser_t *p) // cargs -> call args.
+{
+	ptr_list_t l = create_ptr_list();
+	if(p_peek(p).type != tt_open_paren)
+		return parser_error(p, "expected an opening parenthesis"), l;
+	p_del(p);
+
+	while(p_peek(p).type != tt_close_paren)
+	{
+		ptr_list_add(&l, parse_expr(p));
+		if(p_peek(p).type == tt_close_paren) break;
+		if(p_peek(p).type != tt_cma)
+			return parser_error(p, "expected a comma"), l;
+	}
+
+	// if loop finishes, this error is not needed.
+	// if(p_peek(p).type != tt_close_paren)
+	// 		return parser_error(p, "expected a closing parenthesis"), l;
+	p_del(p);
+	return l;
+}
+
+
+node_t *parse_suffix(parser_t *p)
+{
+	node_t *n = parse_atom(p);
+	if(p_peek(p).type == tt_open_paren)
+	{ // <expr> <cargs>
+		ptr_list_t args = parse_cargs(p);
+		node_cll_t *m = create_cll_node(n, args.count, (node_t**)args.data);
+		free_ptr_list(&args, NULL);
+		return (node_t*)m;
+	}
+	else return n;
+}
+
+node_t *parse_prefix(parser_t *p)
+{
+	// token_t tok = p_peek(p);
+	// if(tok.type == tt_not)
+	// {
+	// 	// TODO! node_unr_t or something similar.
+	// }
+	/*else*/ return parse_suffix(p);
+}
+
 node_t *parse_mul(parser_t *p)
 {
-	node_t *lhs = parse_atom(p);
+	node_t *lhs = parse_prefix(p);
 	token_t t = p_peek(p);
 	while(t.type == tt_mul || t.type == tt_div)
 	{
 		p_del(p);
 		lhs = (node_t*)create_bin_node(
 			t.type == tt_mul ? bin_op_mul : bin_op_div,
-			lhs, parse_atom(p));
+			lhs, parse_prefix(p));
 		t = p_peek(p);
 	}
 	return lhs;
@@ -177,6 +251,29 @@ node_seq_t *parse_seq(parser_t *p, token_t end, bool new)
 	return seq;
 }
 
+ptr_list_t parse_args(parser_t *p)
+{
+	ptr_list_t l = create_ptr_list();
+	if(p_peek(p).type != tt_open_paren)
+		return parser_error(p, "expected an opening parenthesis"), l;
+	p_del(p);
+
+	while(p_peek(p).type != tt_close_paren)
+	{
+		if(p_peek(p).type != tt_var)
+			return parser_error(p, "expected an argument name"), l;
+		ptr_list_add(&l, copy_string(p_get(p).value));
+		if(p_peek(p).type == tt_close_paren) break;
+		if(p_peek(p).type != tt_cma)
+			return parser_error(p, "expected a comma"), l;
+	}
+
+	// if loop finishes, this error is not needed.
+	// if(p_peek(p).type != tt_close_paren)
+	// 		return parser_error(p, "expected a closing parenthesis"), l;
+	p_del(p);
+	return l;
+}
 
 node_t *parse_expr(parser_t *p)
 {
@@ -271,6 +368,19 @@ node_t *parse_expr(parser_t *p)
 			return (node_t*)create_dbg_node(expr);
 		}
 
+		if(strcmp(tok.value, "func") == 0)
+		{
+			// "func" "(" args ")" expr
+
+			p_del(p); // skip "func"
+			ptr_list_t args = parse_args(p);
+			node_t *expr = parse_expr(p);
+
+			node_fun_t *f = create_fun_node(expr, args.count, (char**)args.data);
+			free_ptr_list(&args, &free);
+			return (node_t*)f;
+		}
+
 
 		if(p->ptr && p->ptr->next && p->ptr->next->token.type == tt_eql)
 		{
@@ -282,8 +392,6 @@ node_t *parse_expr(parser_t *p)
 	}
 	return parse_eql(p);
 }
-
-
 
 node_t *parse(parser_t *p)
 {

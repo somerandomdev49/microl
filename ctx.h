@@ -1,18 +1,26 @@
 #ifndef MICROL_CTX_H
 #define MICROL_CTX_H
-
+#include "ast.h"
 typedef struct obj_t obj_t;
+char *copy_string(const char *other);
 struct obj_t
 {
 	enum
 	{
-		ot_num, ot_str, ot_nil
+		ot_num, ot_str, ot_nil,
+		ot_fun, ot_obj, ot_arr,
 	} type;
 	union
 	{
 		struct {} nil; // does nothing, for clarity.
 		double num;
 		char *str;
+		struct
+		{
+			size_t count;
+			char **args;
+			node_t *body;
+		} fun;
 	} value;
 };
 
@@ -50,8 +58,8 @@ bool obj_is_true(obj_t *o)
 		case ot_nil: return false;
 		case ot_num: return o->value.num;
 		case ot_str: return o->value.str && strlen(o->value.str);
+		default: return false;
 	}
-    return false;
 }
 #define alloc_obj() malloc(sizeof(obj_t))
 
@@ -74,11 +82,39 @@ obj_t *create_str_obj(ctx_t *ctx, char *value)
 {
 	obj_t *o = alloc_obj();
 	o->type = ot_str;
-	size_t len = strlen(value) + 1;
-	char *str = malloc(len);
-	memcpy(str, value, len);
-	o->value.str = str;
+	o->value.str = copy_string(value);
 	return o;
+}
+
+obj_t *create_fun_obj(ctx_t *ctx, size_t count, char **args, node_t *body)
+{
+	obj_t *o = alloc_obj();
+	o->type = ot_fun;
+	o->value.fun.count = count;
+	o->value.fun.body = body;
+	o->value.fun.args = malloc(sizeof(char*) * count);
+	for(size_t i = 0; i < count; ++i)
+		o->value.fun.args[i] = copy_string(args[i]);
+	return o;
+}
+
+obj_t *copy_obj(ctx_t *ctx, obj_t *o)
+{
+	switch (o->type) {
+		case ot_nil: return create_nil_obj(ctx);
+		case ot_num: return create_num_obj(ctx, o->value.num);
+
+		case ot_str:
+			return create_str_obj(ctx, copy_string(o->value.str));
+		case ot_fun:
+			return create_fun_obj(ctx,
+					o->value.fun.count,
+					o->value.fun.args,
+					o->value.fun.body);
+		default:
+            fprintf(stderr, "error: eval -> copy obj not implemented\n");
+			return NULL;
+	}
 }
 
 void free_obj(obj_t *o)
@@ -90,6 +126,14 @@ void free_obj(obj_t *o)
 		case ot_str:
 			free(o->value.str);
 			break;
+		case ot_fun:
+			for(size_t i = 0; i < o->value.fun.count; ++i)
+				free(o->value.fun.args[i]);
+			free(o->value.fun.args);
+			break;
+		default:
+            fprintf(stderr, "error: eval -> free obj not implemented\n");
+			return;
 	}
 	free(o);
 }
@@ -104,6 +148,7 @@ void print_obj(obj_t *o)
         case ot_str: printf("%s", o->value.str); break;
         default:
             fprintf(stderr, "error: eval -> print obj not implemented\n");
+			break;
     }
 }
 

@@ -1,12 +1,6 @@
-let output = 0
-let i = 1
-while i < 10 do
-    let j = 0
-    debug i
-    while j < 10 do
-        output = output + j * i
-        if j == 5 then break
-        j = j + 1
-    end
-    i = i + 1
+let fib = func(x) do
+    if x < 2 then x
+    else fib(x - 1) + fib(x - 2)
 end
+
+let output = fib(6)

@@ -10,6 +10,9 @@ typedef enum
 	tt_eql, tt_neq, tt_ieq, tt_smc, // '=', '!=', '==', ';'
 	tt_grt, tt_lst, tt_gte, tt_lte, // '>', '<', '>=', '<='
 	tt_open_paren,  tt_close_paren, // '(', ')'
+	tt_cma, tt_mod, tt_cln, tt_dot, // ',', '%', ':', '.'
+	tt_and, tt_cor, tt_xor, tt_not, // '&', '|', '^', '!'
+	tt_neg, tt_shr, tt_shl, tt_dlr, // '~', '>>', '<<', '$'
 } token_type_t;
 
 typedef struct

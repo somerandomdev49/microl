@@ -3,7 +3,7 @@
 
 written in C.
 
-### Example:
+### Examples:
 ```lua
 let output = 0
 let i = 1
@@ -17,6 +17,17 @@ while i < 10 do
     end
     i = i + 1
 end
+```
+
+functions:
+
+```lua
+let fib = func(x) do
+    if x < 2 then x
+    else fib(x - 1) + fib(x - 2)
+end
+
+let output = fib(6)
 ```
 
 ### Usage:
@@ -42,6 +53,7 @@ The value printed is the value of the `output` variable.
 * [x] ~~parse operators other than `+` and `*` (simple to fix, but im lazy).~~
 * [x] ~~add if and loops~~
 * [x] ~~change from `double` to some kind of `obj_t` for the interpreter.~~
+* [x] ~~add functions.~~
 * [ ] add strings.
 * [ ] add parser support for nil.
-* [ ] add functions.
+* [ ] change `get != ... then error` to `peek != ... then error else del`

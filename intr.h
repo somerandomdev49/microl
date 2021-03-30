@@ -28,7 +28,6 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		{
 			node_var_t* nv = ((node_var_t*)node);
 			var_t *v = get_var(ctx, nv->value);
-			dintr_printf("VAR %f\n", v->value);
 
 			// ? TODO: maybe didn't free something? check later!
 			if(!v)
@@ -37,6 +36,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 					nv->value);
 				return NULL;
 			}
+			dintr_printf("VAR %f\n", v->value);
 
 			return v->value;
 		}
@@ -44,7 +44,14 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		{
 			node_set_t* ns = (node_set_t*)node;
 			obj_t *val = eval_node(ns->value, ctx);
-			get_var(ctx, ns->name)->value = val;
+			var_t *v = get_var(ctx, ns->name);
+			if(!v)
+			{
+				fprintf(stderr, "error: eval -> no such variable: \"%s\".\n",
+					ns->name);
+				return NULL;
+			}
+			v->value = val;
 			return val;
 		}
 		case nt_let:
@@ -96,6 +103,36 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			ctx->in_loop = 0;
 			return val;
 		}
+		case nt_fun:
+		{
+			node_fun_t* ni = (node_fun_t*)node;
+			return create_fun_obj(ctx, ni->count, ni->args, ni->value);
+		}
+		case nt_cll:
+		{
+			node_cll_t* nc = (node_cll_t*)node;
+			obj_t *o = eval_node(nc->value, ctx);
+			if(!o) return NULL;
+			if(o->type != ot_fun)
+			{
+				fprintf(stderr, "error: eval -> can only call a function!\n");
+				return NULL;
+			}
+			if(o->value.fun.count > nc->count)
+			{
+				fprintf(stderr, "error: eval -> function !.\n");
+				return NULL;
+			}
+			ctx_t fctx = create_context(ctx);
+			for(size_t i = 0; i < nc->count; ++i)
+				add_var(&fctx, create_var(
+					o->value.fun.args[i],
+					eval_node(nc->args[i], ctx)));
+			obj_t *v = eval_node(o->value.fun.body, &fctx);
+			obj_t *c = copy_obj(ctx, v);
+			free_context(&fctx);
+			return c;
+		}
 		case nt_seq:
 		{
 			node_seq_t* nq = (node_seq_t*)node;
@@ -126,13 +163,13 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			obj_t *rhs_o = eval_node(nb->rhs, ctx);
 			if(lhs_o->type != ot_num)
 			{
-				fprintf(stderr, "error: eval -> left-hand side of binary operator is not a number!.\n");
+				fprintf(stderr, "error: eval -> left-hand side of binary operator is not a number!\n");
 				return NULL;
 			}
 
 			if(rhs_o->type != ot_num)
 			{
-				fprintf(stderr, "error: eval -> right-hand side of binary operator is not a number!.\n");
+				fprintf(stderr, "error: eval -> right-hand side of binary operator is not a number!\n");
 				return NULL;
 			}
 

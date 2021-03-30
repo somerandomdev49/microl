@@ -6,6 +6,14 @@
 #define dast_printf(...) //printf(__VA_ARGS__)
 #define dast_puts(...) //puts(__VA_ARGS__)
 
+char *copy_string(const char *other)
+{
+	size_t len = strlen(other) + 1; // null-terminator included!
+	char *s = malloc(len);
+	memcpy(s, other, len);
+	return s;
+}
+
 typedef enum
 {
 	nt_num, nt_var, nt_str,
@@ -57,10 +65,7 @@ node_var_t *create_var_node(char *value)
 {
 	node_var_t *n = alloc_node(var);
 	n->node.type = nt_var;
-
-	size_t len = strlen(value) + 1; // null-terminator included!
-	n->value = malloc(len);
-	memcpy(n->value, value, len);
+	n->value = copy_string(value);
 	return n;
 }
 
@@ -117,10 +122,7 @@ node_let_t *create_let_node(char *name, node_t *value)
 	node_let_t *n = alloc_node(let);
 	n->node.type = nt_let;
 	n->value = value;
-
-	size_t len = strlen(name) + 1; // null-terminator included!
-	n->name = malloc(len);
-	memcpy(n->name, name, len);
+	n->name = copy_string(name);
 	return n;
 }
 
@@ -220,6 +222,51 @@ node_dbg_t *create_dbg_node(node_t *value)
 
 
 
+// FUN NODE //
+
+typedef struct
+{
+	node_t node;
+	node_t *value;
+	size_t count;
+	char *args[];
+} node_fun_t;
+
+node_fun_t *create_fun_node(node_t *value, size_t count, char *args[])
+{
+	node_fun_t *n = malloc(sizeof(node_fun_t) + count * sizeof(char*));
+	n->node.type = nt_fun;
+	n->value = value;
+	n->count = count;
+	for(size_t i = 0; i < n->count; ++i)
+		n->args[i] = copy_string(args[i]);
+	return n;
+}
+
+
+
+// CLL NODE //
+
+
+typedef struct
+{
+	node_t node;
+	node_t *value;
+	size_t count;
+	node_t *args[];
+} node_cll_t;
+
+node_cll_t *create_cll_node(node_t *value, size_t count, node_t *args[])
+{
+	node_cll_t *n = malloc(sizeof(node_cll_t) + count * sizeof(char*));
+	n->node.type = nt_cll;
+	n->value = value;
+	n->count = count;
+	for(size_t i = 0; i < n->count; ++i)
+		n->args[i] = args[i];
+	return n;
+}
+
 
 // SET NODE //
 
@@ -315,25 +362,25 @@ void free_node(node_t *node)
 		case nt_ret:
 		case nt_dbg:
 		{
-			node_dbg_t* ng = (node_dbg_t*)node;
+			node_dbg_t *ng = (node_dbg_t*)node;
 			free_node(ng->value);
 			break;
 		}
 		case nt_var:
 		{
-			node_var_t* nv = (node_var_t*)node;
+			node_var_t *nv = (node_var_t*)node;
 			free(nv->value);
 			break;
 		}
 		case nt_seq:
 		{
-			node_seq_t* nl = (node_seq_t*)node;
+			node_seq_t *nl = (node_seq_t*)node;
 			node_seq_del_all(nl);
 			break;
 		}
 		case nt_iff:
 		{
-			node_iff_t* ni = (node_iff_t*)node;
+			node_iff_t *ni = (node_iff_t*)node;
 			free_node(ni->cond);
 			free_node(ni->body);
 			free_node(ni->otherwise);
@@ -341,16 +388,32 @@ void free_node(node_t *node)
 		}
 		case nt_for:
 		{
-			node_for_t* nr = (node_for_t*)node;
+			node_for_t *nr = (node_for_t*)node;
 			free_node(nr->cond);
 			free_node(nr->body);
 			break;
 		}
 		case nt_let:
 		{
-			node_let_t* nl = (node_let_t*)node;
+			node_let_t *nl = (node_let_t*)node;
 			free(nl->name);
 			free_node(nl->value);
+			break;
+		}
+		case nt_fun:
+		{
+			node_fun_t *nf = (node_fun_t*)node;
+			free_node(nf->value);
+			for(size_t i = 0; i < nf->count; ++i)
+				free(nf->args[i]);
+			break;
+		}
+		case nt_cll:
+		{
+			node_cll_t *nf = (node_cll_t*)node;
+			free_node(nf->value);
+			for(size_t i = 0; i < nf->count; ++i)
+				free_node(nf->args[i]);
 			break;
 		}
 		case nt_set:
@@ -362,7 +425,7 @@ void free_node(node_t *node)
 		}
 		case nt_bin:
 		{
-			node_bin_t* nb = (node_bin_t*)node;
+			node_bin_t *nb = (node_bin_t*)node;
 			free_node(nb->lhs);
 			free_node(nb->rhs);
 			break;
