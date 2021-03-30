@@ -56,7 +56,10 @@ void run(const char *filename)
 		eval_node(n, &ctx);
 		var_t *output = get_var(&ctx, "output");
 		if(output)
-			printf("%f\n", output->value);
+		{
+			print_obj(output->value);
+			putc('\n', stdout);
+		}
 		else
 			fprintf(stderr, "No variable with name \"output\" found!\n");
 	}

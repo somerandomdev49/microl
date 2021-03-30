@@ -2,7 +2,7 @@ let output = 0
 let i = 1
 while i < 10 do
     let j = 0
-
+    debug i
     while j < 10 do
         output = output + j * i
         if j == 5 then break
