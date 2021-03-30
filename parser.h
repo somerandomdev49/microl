@@ -8,8 +8,6 @@
 
 #define dparse_printf(...) //printf(__VA_ARGS__)
 #define dparse_puts(...) //puts(__VA_ARGS__)
-#define bool char
-
 typedef struct
 {
 	token_list_t *toks;
@@ -99,34 +97,31 @@ node_t *parse_atom(parser_t *p)
 
 node_t *parse_mul(parser_t *p)
 {
-	dparse_puts("parse mul");
 	node_t *lhs = parse_atom(p);
-	dparse_puts("yahhaa im stoopid");
-	while(p_peek(p).type == tt_mul)
+	token_t t = p_peek(p);
+	while(t.type == tt_mul || t.type == tt_div)
 	{
-		// token_t n = p_get(p);
 		p_del(p);
-		dparse_puts("parse mul loop");
-		node_t *nn = parse_atom(p);
-		dparse_puts("parse mul nn");
-		lhs = (node_t*)create_bin_node(bin_op_mul, lhs, nn);
+		lhs = (node_t*)create_bin_node(
+			t.type == tt_mul ? bin_op_mul : bin_op_div,
+			lhs, parse_atom(p));
+		t = p_peek(p);
 	}
-	dparse_puts("parse mul ret");
 	return lhs;
 }
 
 node_t *parse_add(parser_t *p)
 {
-	dparse_puts("parse add");
 	node_t *lhs = parse_mul(p);
-	while(p_peek(p).type == tt_add)
+	token_t t = p_peek(p);
+	while(t.type == tt_add || t.type == tt_sub)
 	{
-		// token_t n = p_get(p);
 		p_del(p);
-		dparse_puts("parse add loop");
-		lhs = (node_t*)create_bin_node(bin_op_add, lhs, parse_mul(p));
+		lhs = (node_t*)create_bin_node(
+			t.type == tt_add ? bin_op_add : bin_op_sub,
+			lhs, parse_mul(p));
+		t = p_peek(p);
 	}
-	dparse_puts("parse add ret");
 	return lhs;
 }
 
@@ -167,9 +162,9 @@ node_t *parse_eql(parser_t *p)
 	return lhs;
 }
 
-node_seq_t *parse_seq(parser_t *p, token_t end)
+node_seq_t *parse_seq(parser_t *p, token_t end, bool new)
 {
-	node_seq_t *seq = create_seq_node();
+	node_seq_t *seq = create_seq_node(new);
 	for(;;)
 	{
 		token_t t = p_peek(p);
@@ -211,7 +206,7 @@ node_t *parse_expr(parser_t *p)
 			// "do" seq "end"
 			p_del(p); // skip "do"
 
-			node_t *n = (node_t*)parse_seq(p, (token_t){ "end", tt_var });
+			node_t *n = (node_t*)parse_seq(p, (token_t){ "end", tt_var }, true);
 
 			p_del(p); // if parse_seq ended, the next token is "end"!
 			return n;
@@ -245,6 +240,28 @@ node_t *parse_expr(parser_t *p)
 			return (node_t*)create_iff_node(cond, body, otherwise);
 		}
 
+		if(strcmp(tok.value, "while") == 0)
+		{
+			// "while" expr expr
+
+			p_del(p); // skip "while"
+
+			node_t *cond = parse_expr(p);
+			node_t *body = parse_expr(p);
+
+			return (node_t*)create_for_node(cond, body);
+		}
+
+		if(strcmp(tok.value, "break") == 0)
+		{
+			// "break"
+
+			p_del(p); // skip "break"
+
+			return (node_t*)create_brk_node();
+		}
+
+
 		if(p->ptr && p->ptr->next && p->ptr->next->token.type == tt_eql)
 		{
 			node_set_t *n = create_set_node(tok.value, NULL);
@@ -261,7 +278,7 @@ node_t *parse_expr(parser_t *p)
 node_t *parse(parser_t *p)
 {
 	dparse_puts("parse");
-	return (node_t*)parse_seq(p, token_eof());
+	return (node_t*)parse_seq(p, token_eof(), false);
 }
 
 #endif//MICROL_PARSER_H

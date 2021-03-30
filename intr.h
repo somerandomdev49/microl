@@ -6,6 +6,9 @@
 #include <string.h>
 #include "ast.h"
 
+#define dintr_puts(...) //puts(__VA_ARGS__)
+#define dintr_printf(...) //printf(__VA_ARGS__)
+
 typedef struct
 {
 	char *name;
@@ -27,14 +30,17 @@ var_t create_var(char *name, double value)
 void free_var(var_t *var)
 { free(var->name); };
 
-typedef struct
+typedef struct ctx_t ctx_t;
+struct ctx_t
 {
 	size_t count;
 	var_t *vars;
-} ctx_t;
+	ctx_t *parent;
+	bool in_loop;
+};
 
-ctx_t create_context()
-{ return (ctx_t){ 0, malloc(0) }; }
+ctx_t create_context(ctx_t *parent)
+{ return (ctx_t){ 0, malloc(0), parent, 0 }; }
 
 void free_context(ctx_t *ctx)
 {
@@ -47,16 +53,22 @@ void free_context(ctx_t *ctx)
 var_t *get_var(ctx_t *ctx, char *name)
 {
 	for(size_t i = 0; i < ctx->count; ++i)
-	{
 		if(strcmp(ctx->vars[i].name, name) == 0)
 			return &ctx->vars[i];
-	}
+	if(ctx->parent)
+		return get_var(ctx->parent, name);
 	return NULL;
 }
 
 
 void add_var(ctx_t *ctx, var_t var)
 {
+	for(size_t i = 0; i < ctx->count; ++i)
+		if(strcmp(ctx->vars[i].name, var.name) == 0)
+		{
+			fprintf(stderr, "variable with name \"%s\" already exists.\n", var.name);
+			return;
+		}
 	ctx->vars = realloc(ctx->vars, ++ctx->count * sizeof(var));
 	ctx->vars[ctx->count - 1] = var;
 }
@@ -72,11 +84,14 @@ double eval_node(node_t *node, ctx_t *ctx)
 	switch(node->type)
 	{
 		case nt_num:
+			dintr_printf("NUM %f\n", ((node_num_t*)node)->value);
 			return ((node_num_t*)node)->value;
 		case nt_var:
 		{
 			node_var_t* nv = ((node_var_t*)node);
 			var_t *v = get_var(ctx, nv->value);
+			dintr_printf("VAR %f\n", v->value);
+
 			// ? TODO: maybe didn't free something? check later!
 			if(!v)
 			{
@@ -109,18 +124,49 @@ double eval_node(node_t *node, ctx_t *ctx)
 			else if(ni->otherwise)
 				return eval_node(ni->otherwise, ctx);
 			return -1;
-			break;
+		}
+		case nt_brk:
+			if(ctx->in_loop) ctx->in_loop = 0;
+			else fprintf(stderr, "error: eval -> break not inside loop.\n");
+			return -1;
+		case nt_for:
+		{
+			dintr_puts("m");
+			node_for_t* ni = (node_for_t*)node;
+			double val;
+			ctx->in_loop = 1;
+			while(ctx->in_loop)
+			{
+				double c = eval_node(ni->cond, ctx);
+				dintr_printf("V: %f\n", c);
+				if(!c) break;
+				dintr_puts("while");
+				val = eval_node(ni->body, ctx);
+			}
+			ctx->in_loop = 0;
+			return val;
 		}
 		case nt_seq:
 		{
 			node_seq_t* nq = (node_seq_t*)node;
 			double v;
 			struct node_seq_cell_t *ptr = nq->head;
+			ctx_t *ctxp = ctx;
+			ctx_t ctxq;
+
+			if(nq->new)
+			{
+				ctxq = create_context(ctx);
+				ctxp = &ctxq;
+			}
+
 			while(ptr)
 			{
-				v = eval_node(ptr->value, ctx);
+				v = eval_node(ptr->value, ctxp);
 				ptr = ptr->next;
 			}
+			if(nq->new)
+				free_context(&ctxq);
 			return v;
 		}
 		case nt_bin:
@@ -147,9 +193,11 @@ double eval_node(node_t *node, ctx_t *ctx)
 					return eval_node(nb->lhs, ctx) !=
 						   eval_node(nb->rhs, ctx);
 				case bin_op_grt:
+					dintr_puts("grt");
 					return eval_node(nb->lhs, ctx) >
 						   eval_node(nb->rhs, ctx);
 				case bin_op_lst:
+					dintr_puts("less");
 					return eval_node(nb->lhs, ctx) <
 						   eval_node(nb->rhs, ctx);
 				case bin_op_lte:

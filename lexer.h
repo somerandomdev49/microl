@@ -53,8 +53,8 @@ token_list_t lex(FILE *fptr)
 		else if(c == '-') add_token(&toks, (token_t){ NULL, tt_sub });
 		else if(c == '*') add_token(&toks, (token_t){ NULL, tt_mul });
 		else if(c == '/') add_token(&toks, (token_t){ NULL, tt_div });
-		else if(c == '<') add_token(&toks, (token_t){ NULL, tt_grt });
-		else if(c == '>') add_token(&toks, (token_t){ NULL, tt_lst });
+		else if(c == '<') add_token(&toks, (token_t){ NULL, tt_lst });
+		else if(c == '>') add_token(&toks, (token_t){ NULL, tt_grt });
 		else if(c == '=')
 		{
 			char d = getc(fptr);

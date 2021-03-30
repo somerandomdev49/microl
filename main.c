@@ -5,6 +5,10 @@
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
 
+#define bool char
+#define true 1
+#define false 0
+
 #define dmain_printf(...) //printf(__VA_ARGS__)
 #define dmain_puts(...) //puts(__VA_ARGS__)
 
@@ -46,7 +50,7 @@ void run(const char *filename)
 	del_all_tokens(&toks);
 
 	dmain_puts("eval...");
-	ctx_t ctx = create_context();
+	ctx_t ctx = create_context(NULL);
 	if(!parser.fail)
 	{
 		eval_node(n, &ctx);

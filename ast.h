@@ -11,6 +11,8 @@ typedef enum
 	nt_num, nt_var, nt_str,
 	nt_bin, nt_let, nt_seq,
 	nt_set, nt_iff, nt_for,
+	nt_brk, nt_ret, nt_cll,
+	nt_fun, // TODO!
 } node_type_t;
 
 typedef struct
@@ -88,6 +90,7 @@ typedef struct
 	} value;
 } node_bin_t;
 
+// TODO: Bug, needed to switch rhs/lhs: check what is wrong...
 node_bin_t *create_bin_node(char op, node_t *lhs, node_t *rhs)
 {
 	node_bin_t *n = alloc_node(bin);
@@ -145,6 +148,58 @@ node_iff_t *create_iff_node(node_t *cond, node_t *body, node_t *otherwise)
 
 
 
+// FOR NODE //
+
+typedef struct
+{
+	node_t node;
+	node_t *cond, *body;
+} node_for_t;
+
+node_for_t *create_for_node(node_t *cond, node_t *body)
+{
+	node_for_t *n = alloc_node(for);
+	n->node.type = nt_for;
+	n->cond = cond;
+	n->body = body;
+	return n;
+}
+
+
+
+// BRK NODE //
+
+typedef struct
+{
+	node_t node;
+} node_brk_t;
+
+node_brk_t *create_brk_node()
+{
+	node_brk_t *n = alloc_node(brk);
+	n->node.type = nt_brk;
+	return n;
+}
+
+
+
+// RET NODE //
+
+typedef struct
+{
+	node_t node;
+	node_t *value;
+} node_ret_t;
+
+node_ret_t *create_ret_node(node_t *value)
+{
+	node_ret_t *n = alloc_node(ret);
+	n->node.type = nt_ret;
+	n->value = value;
+	return n;
+}
+
+
 
 // SET NODE //
 
@@ -175,6 +230,7 @@ node_set_t *create_set_node(char *name, node_t *value)
 typedef struct
 {
 	node_t node;
+	bool new;
 	struct node_seq_cell_t
 	{
 		node_t *value;
@@ -182,12 +238,13 @@ typedef struct
 	} *head, *tail;
 } node_seq_t;
 
-node_seq_t *create_seq_node()
+node_seq_t *create_seq_node(bool new)
 {
 	node_seq_t *n = alloc_node(seq);
 	n->node.type = nt_seq;
 	n->head = NULL;
 	n->tail = NULL;
+	n->new = new;
 	return n;
 }
 
@@ -233,6 +290,7 @@ void free_node(node_t *node)
 	switch(node->type)
 	{
 		case nt_num: free(node); break;
+		case nt_brk: free(node); break;
 		case nt_var:
 		{
 			node_var_t* nv = (node_var_t*)node;
@@ -253,6 +311,14 @@ void free_node(node_t *node)
 			free_node(ni->cond);
 			free_node(ni->body);
 			free_node(ni->otherwise);
+			free(node);
+			break;
+		}
+		case nt_for:
+		{
+			node_for_t* nr = (node_for_t*)node;
+			free_node(nr->cond);
+			free_node(nr->body);
 			free(node);
 			break;
 		}
@@ -280,7 +346,7 @@ void free_node(node_t *node)
 			break;
 		}
 		default:
-			fprintf(stderr, "error: free -> not implemented.\n");
+			fprintf(stderr, "error: free -> not implemented %d.\n", node->type);
 			break;
 	}
 }

@@ -1,5 +1,10 @@
-let output = 2
-if output == 0 then
-    output = output + 1
-else
-    output = 20
+let output = 0
+let i = 1
+while i < 10 do
+    let j = 0
+    while j < 10 do
+        output = output + j * i
+        j = j + 1
+    end
+    i = i + 1
+end
