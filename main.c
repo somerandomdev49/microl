@@ -57,8 +57,15 @@ void run(const char *filename)
 		var_t *output = get_var(&ctx, "output");
 		if(output)
 		{
-			print_obj(output->value);
-			putc('\n', stdout);
+			if(!output->value)
+			{
+				fprintf(stderr, "could not display \"output\" due to errors!\n");
+			}
+			else
+			{
+				print_obj(output->value);
+				putc('\n', stdout);
+			}
 		}
 		else
 			fprintf(stderr, "No variable with name \"output\" found!\n");

@@ -120,7 +120,14 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			}
 			if(o->value.fun.count > nc->count)
 			{
-				fprintf(stderr, "error: eval -> function !.\n");
+				fprintf(
+					stderr,
+					"error: eval -> function needs %zu argument%s, but %zu %s provided!\n",
+					o->value.fun.count,
+					o->value.fun.count == 1 ? "" : "s",
+					nc->count,
+					nc->count == 1 ? "was" : "were"
+				);
 				return NULL;
 			}
 			ctx_t fctx = create_context(ctx);
@@ -161,6 +168,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			node_bin_t* nb = (node_bin_t*)node;
 			obj_t *lhs_o = eval_node(nb->lhs, ctx);
 			obj_t *rhs_o = eval_node(nb->rhs, ctx);
+			if(!lhs_o || !rhs_o) return NULL;
 			if(lhs_o->type != ot_num)
 			{
 				fprintf(stderr, "error: eval -> left-hand side of binary operator is not a number!\n");

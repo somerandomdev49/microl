@@ -136,6 +136,7 @@ ptr_list_t parse_cargs(parser_t *p) // cargs -> call args.
 		if(p_peek(p).type == tt_close_paren) break;
 		if(p_peek(p).type != tt_cma)
 			return parser_error(p, "expected a comma"), l;
+		p_del(p);
 	}
 
 	// if loop finishes, this error is not needed.
@@ -266,6 +267,7 @@ ptr_list_t parse_args(parser_t *p)
 		if(p_peek(p).type == tt_close_paren) break;
 		if(p_peek(p).type != tt_cma)
 			return parser_error(p, "expected a comma"), l;
+		p_del(p);
 	}
 
 	// if loop finishes, this error is not needed.

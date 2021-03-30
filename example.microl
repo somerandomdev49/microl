@@ -1,6 +1,6 @@
-let fib = func(x) do
+let fib = func() do
     if x < 2 then x
     else fib(x - 1) + fib(x - 2)
 end
 
-let output = fib(6)
+let output = fib()

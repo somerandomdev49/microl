@@ -100,6 +100,7 @@ obj_t *create_fun_obj(ctx_t *ctx, size_t count, char **args, node_t *body)
 
 obj_t *copy_obj(ctx_t *ctx, obj_t *o)
 {
+	if(!o) return NULL;
 	switch (o->type) {
 		case ot_nil: return create_nil_obj(ctx);
 		case ot_num: return create_num_obj(ctx, o->value.num);
@@ -119,6 +120,7 @@ obj_t *copy_obj(ctx_t *ctx, obj_t *o)
 
 void free_obj(obj_t *o)
 {
+	if(!o) return;
 	switch (o->type) {
 		case ot_nil:
 		case ot_num: break;
