@@ -30,6 +30,12 @@ end
 let output = fib(6)
 ```
 
+this does the same thing:
+```lua
+let output = (func(x) if x < 2 then x else @(x - 1) + @(x - 2))(6)
+```
+
+
 ### Usage:
 ```sh
 
@@ -57,3 +63,4 @@ The value printed is the value of the `output` variable.
 * [ ] add strings.
 * [ ] add parser support for nil.
 * [ ] change `get != ... then error` to `peek != ... then error else del`
+* [ ] add stdlib - *in progress*
