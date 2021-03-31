@@ -84,9 +84,15 @@ void ptr_list_add(ptr_list_t *l, void *v)
 
 void free_ptr_list(ptr_list_t *l, void (*free_f)(void*))
 {
-	if(free_f)
-		for(size_t i = 0; i < l->count; ++l)
-			free_f(l->data[i]);
+	if(!l) return;
+	if(free_f && l->data)
+		for(size_t i = 0; i < l->count; ++i)
+			if(l->data[i])
+			{
+				// printf("wtf %s\n", (char*)l->data[i]);
+				free_f(l->data[i]);
+				l->data[i] = NULL;
+			}
 	free(l->data);
 }
 
@@ -263,7 +269,7 @@ ptr_list_t parse_args(parser_t *p)
 	{
 		if(p_peek(p).type != tt_var)
 			return parser_error(p, "expected an argument name"), l;
-		ptr_list_add(&l, copy_string(p_get(p).value));
+		ptr_list_add(&l, copy_string(p_get(p).value)); //
 		if(p_peek(p).type == tt_close_paren) break;
 		if(p_peek(p).type != tt_cma)
 			return parser_error(p, "expected a comma"), l;

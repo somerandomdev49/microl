@@ -22,11 +22,11 @@ token_list_t lex(FILE *fptr)
 		dlex_printf("Not space\n");
 
 		// Tokenize.
-		if(c == '_' || isalpha(c))
+		if(c == '_' || c == '@' || isalpha(c))
 		{
 			long size = 0;
 			do { c = (++size, getc(fptr)); }
-			while(c == '_' || isalnum(c));
+			while(c == '_' || c == '@' || isalnum(c));
 			fseek(fptr, -size - 1, SEEK_CUR);
 			char *str = malloc(size + 1);
 			str[size] = 0;

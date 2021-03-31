@@ -8,6 +8,7 @@
 
 char *copy_string(const char *other)
 {
+	if(!other) return NULL;
 	size_t len = strlen(other) + 1; // null-terminator included!
 	char *s = malloc(len);
 	memcpy(s, other, len);
@@ -239,7 +240,7 @@ node_fun_t *create_fun_node(node_t *value, size_t count, char *args[])
 	n->value = value;
 	n->count = count;
 	for(size_t i = 0; i < n->count; ++i)
-		n->args[i] = copy_string(args[i]);
+		n->args[i] = copy_string(args[i]); // "gurumgum"
 	return n;
 }
 

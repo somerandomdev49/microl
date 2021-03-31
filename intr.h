@@ -131,6 +131,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				return NULL;
 			}
 			ctx_t fctx = create_context(ctx);
+			add_var(&fctx, create_var("@", o));
 			for(size_t i = 0; i < nc->count; ++i)
 				add_var(&fctx, create_var(
 					o->value.fun.args[i],
