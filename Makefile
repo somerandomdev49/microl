@@ -1,4 +1,4 @@
-CC = clang
+CC = gcc-9
 
 microl: *.c *.h
-	$(CC) *.c -o microl
+	$(CC) *.c -o microl -g

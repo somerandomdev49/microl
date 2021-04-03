@@ -7,8 +7,57 @@
 #include "ast.h"
 #include "ctx.h"
 
-#define dintr_puts(...) //puts(__VA_ARGS__)
-#define dintr_printf(...) //printf(__VA_ARGS__)
+#define dintr_puts(...) puts(__VA_ARGS__)
+#define dintr_printf(...) printf(__VA_ARGS__)
+
+
+char *string_node(node_t *node)
+{
+	if(!node)
+	{
+		fprintf(stderr, "error: eval str -> internal error (node is NULL).\n");
+		return "(null)";
+	}
+
+	switch(node->type)
+	{
+		case nt_num: return "num";
+		case nt_var: return "var";
+		case nt_set: return "set";
+		case nt_let: return "let";
+		case nt_iff: return "iff";
+		case nt_brk: return "brk";
+		case nt_ret: return "for";
+		case nt_dbg: return "dbg";
+		case nt_for: return "for";
+		case nt_fun: return "fun";
+		case nt_cll: return "cll";
+		case nt_seq: return "seq";
+		case nt_bin:
+		{
+			node_bin_t* nb = (node_bin_t*)node;
+			switch(nb->value)
+			{
+				case bin_op_add: return "bin_op_add";
+				case bin_op_sub: return "bin_op_sub";
+				case bin_op_mul: return "bin_op_mul";
+				case bin_op_div: return "bin_op_div";
+				case bin_op_ieq: return "bin_op_ieq";
+				case bin_op_neq: return "bin_op_neq";
+				case bin_op_grt: return "bin_op_grt";
+				case bin_op_lst: return "bin_op_lst";
+				case bin_op_lte: return "bin_op_lte";
+				case bin_op_gte: return "bin_op_gte";
+				default:
+					fprintf(stderr, "error: eval -> bin op str not implemented.\n");
+					return NULL;
+			}
+		}
+		default:
+			fprintf(stderr, "error: eval str -> not implemented.\n");
+			return NULL;
+	}
+}
 
 
 obj_t *eval_node(node_t *node, ctx_t *ctx)
@@ -18,6 +67,8 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		fprintf(stderr, "error: eval -> internal error (node is NULL).\n");
 		return create_nil_obj(ctx);
 	}
+
+	printf("NODE: %s\n", string_node(node));
 
 	switch(node->type)
 	{
@@ -36,7 +87,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 					nv->value);
 				return NULL;
 			}
-			dintr_printf("VAR %f\n", v->value);
+			//dintr_printf("VAR %x\n", v->value);
 
 			return v->value;
 		}
@@ -113,6 +164,16 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			node_cll_t* nc = (node_cll_t*)node;
 			obj_t *o = eval_node(nc->value, ctx);
 			if(!o) return NULL;
+			if(o->type == ot_nat)
+			{
+				if(nc->count == 0) return o->value.nat(ctx, 0, NULL);
+				obj_t *args[nc->count];
+				for(size_t i = 0; i < nc->count; ++i)
+					args[i] = eval_node(nc->args[i], ctx);
+				return o->value.nat(ctx, nc->count, args);
+			}
+			puts("FUNCTION CALL NON-NATIVE");
+
 			if(o->type != ot_fun)
 			{
 				fprintf(stderr, "error: eval -> can only call a function!\n");
@@ -131,7 +192,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				return NULL;
 			}
 			ctx_t fctx = create_context(ctx);
-			add_var(&fctx, create_var("@", o));
+			//add_var(&fctx, create_var("@", o));
 			for(size_t i = 0; i < nc->count; ++i)
 				add_var(&fctx, create_var(
 					o->value.fun.args[i],
@@ -139,6 +200,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			obj_t *v = eval_node(o->value.fun.body, &fctx);
 			obj_t *c = copy_obj(ctx, v);
 			free_context(&fctx);
+			puts("FUNCTION RETURN NON-NATIVE");
 			return c;
 		}
 		case nt_seq:
@@ -160,6 +222,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				v = eval_node(ptr->value, ctxp);
 				ptr = ptr->next;
 			}
+			
 			if(nq->new)
 				free_context(&ctxq);
 			return v;

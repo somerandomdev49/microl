@@ -4,18 +4,20 @@
 #include <string.h>
 #define VERSION_MAJOR 0
 #define VERSION_MINOR 1
+#define MICROL_STR_OBJ_LIM 1024
 
 #define bool char
 #define true 1
 #define false 0
 
-#define dmain_printf(...) //printf(__VA_ARGS__)
-#define dmain_puts(...) //puts(__VA_ARGS__)
+#define dmain_printf(...) printf(__VA_ARGS__)
+#define dmain_puts(...) puts(__VA_ARGS__)
 
 #include "lexer.h"
 #include "ast.h"
 #include "parser.h"
 #include "intr.h"
+#include "stdlib.h"
 
 void help(const char *name)
 {
@@ -48,28 +50,34 @@ void run(const char *filename)
 
 	dmain_puts("deleting excess tokens...");
 	del_all_tokens(&toks);
-
-	dmain_puts("eval...");
-	ctx_t ctx = create_context(NULL);
-	if(!parser.fail)
+	if(parser.fail)
 	{
-		eval_node(n, &ctx);
-		var_t *output = get_var(&ctx, "output");
-		if(output)
+		if(n) free_node(n);
+		return;
+	}
+
+	dmain_puts("context init");
+	ctx_t ctx = create_context(NULL);
+	dmain_puts("stdlib init");
+	stdlib_context(&ctx);
+	dmain_puts("eval");
+	eval_node(n, &ctx);
+	dmain_puts("output");
+	var_t *output = get_var(&ctx, "output");
+	if(output)
+	{
+		if(!output->value)
 		{
-			if(!output->value)
-			{
-				fprintf(stderr, "could not display \"output\" due to errors!\n");
-			}
-			else
-			{
-				print_obj(output->value);
-				putc('\n', stdout);
-			}
+			fprintf(stderr, "could not display \"output\" due to errors!\n");
 		}
 		else
-			fprintf(stderr, "No variable with name \"output\" found!\n");
+		{
+			print_obj(output->value);
+			putc('\n', stdout);
+		}
 	}
+	else
+		fprintf(stderr, "No variable with name \"output\" found!\n");
 
 	free_context(&ctx);
 	dmain_puts("freeing...");
@@ -104,6 +112,7 @@ int cli(int argc, char **argv)
 	{
 		return help(program_name), 1;
 	}
+	return 0;
 }
 
 #include <time.h>
