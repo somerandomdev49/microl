@@ -10,8 +10,8 @@
 #define true 1
 #define false 0
 
-#define dmain_printf(...) printf(__VA_ARGS__)
-#define dmain_puts(...) puts(__VA_ARGS__)
+#define dmain_printf(...) //printf(__VA_ARGS__)
+#define dmain_puts(...) //puts(__VA_ARGS__)
 
 #include "lexer.h"
 #include "ast.h"
@@ -63,21 +63,21 @@ void run(const char *filename)
 	dmain_puts("eval");
 	eval_node(n, &ctx);
 	dmain_puts("output");
-	var_t *output = get_var(&ctx, "output");
-	if(output)
-	{
-		if(!output->value)
-		{
-			fprintf(stderr, "could not display \"output\" due to errors!\n");
-		}
-		else
-		{
-			print_obj(output->value);
-			putc('\n', stdout);
-		}
-	}
-	else
-		fprintf(stderr, "No variable with name \"output\" found!\n");
+	// var_t *output = get_var(&ctx, "output");
+	// if(output)
+	// {
+	// 	if(!output->value)
+	// 	{
+	// 		fprintf(stderr, "could not display \"output\" due to errors!\n");
+	// 	}
+	// 	else
+	// 	{
+	// 		print_obj(output->value);
+	// 		putc('\n', stdout);
+	// 	}
+	// }
+	// else
+	// 	fprintf(stderr, "No variable with name \"output\" found!\n");
 
 	free_context(&ctx);
 	dmain_puts("freeing...");

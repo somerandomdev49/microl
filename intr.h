@@ -7,8 +7,8 @@
 #include "ast.h"
 #include "ctx.h"
 
-#define dintr_puts(...) puts(__VA_ARGS__)
-#define dintr_printf(...) printf(__VA_ARGS__)
+#define dintr_puts(...) //puts(__VA_ARGS__)
+#define dintr_printf(...) //printf(__VA_ARGS__)
 
 
 char *string_node(node_t *node)
@@ -68,7 +68,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		return create_nil_obj(ctx);
 	}
 
-	printf("NODE: %s\n", string_node(node));
+	// printf("NODE: %s\n", string_node(node));
 
 	switch(node->type)
 	{
@@ -132,8 +132,8 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		case nt_dbg:
 		{
 			node_dbg_t* ng = (node_dbg_t*)node;
-		 	printf("[debug] -> ");
-			print_obj(eval_node(ng->value, ctx));
+		 	//printf("[debug] -> ");
+			//print_obj(eval_node(ng->value, ctx));
 			putc('\n', stdout);
 			return NULL;
 		}
@@ -172,7 +172,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 					args[i] = eval_node(nc->args[i], ctx);
 				return o->value.nat(ctx, nc->count, args);
 			}
-			puts("FUNCTION CALL NON-NATIVE");
+			// puts("FUNCTION CALL NON-NATIVE");
 
 			if(o->type != ot_fun)
 			{
@@ -200,7 +200,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			obj_t *v = eval_node(o->value.fun.body, &fctx);
 			obj_t *c = copy_obj(ctx, v);
 			free_context(&fctx);
-			puts("FUNCTION RETURN NON-NATIVE");
+			// puts("FUNCTION RETURN NON-NATIVE");
 			return c;
 		}
 		case nt_seq:
@@ -222,7 +222,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				v = eval_node(ptr->value, ctxp);
 				ptr = ptr->next;
 			}
-			
+
 			if(nq->new)
 				free_context(&ctxq);
 			return v;

@@ -363,72 +363,75 @@ void free_node(node_t *node)
 		case nt_ret:
 		case nt_dbg:
 		{
-			node_dbg_t *ng = (node_dbg_t*)node;
-			free_node(ng->value);
+			node_dbg_t *n = (node_dbg_t*)node;
+			free_node(n->value); n->value = NULL;
 			break;
 		}
 		case nt_var:
 		{
-			node_var_t *nv = (node_var_t*)node;
-			free(nv->value);
+			node_var_t *n = (node_var_t*)node;
+			free(n->value);
 			break;
 		}
 		case nt_seq:
 		{
-			node_seq_t *nl = (node_seq_t*)node;
-			node_seq_del_all(nl);
+			node_seq_t *n = (node_seq_t*)node;
+			node_seq_del_all(n);
 			break;
 		}
 		case nt_iff:
 		{
-			node_iff_t *ni = (node_iff_t*)node;
-			free_node(ni->cond);
-			free_node(ni->body);
-			free_node(ni->otherwise);
+			node_iff_t *n = (node_iff_t*)node;
+			free_node(n->cond); n->cond = NULL;
+			free_node(n->body); n->body = NULL;
+			free_node(n->otherwise); n->otherwise = NULL;
 			break;
 		}
 		case nt_for:
 		{
-			node_for_t *nr = (node_for_t*)node;
-			free_node(nr->cond);
-			free_node(nr->body);
+			node_for_t *n = (node_for_t*)node;
+			free_node(n->cond); n->cond = NULL;
+			free_node(n->body); n->body = NULL;
 			break;
 		}
 		case nt_let:
 		{
-			node_let_t *nl = (node_let_t*)node;
-			free(nl->name);
-			free_node(nl->value);
+			node_let_t *n = (node_let_t*)node;
+			free(n->name);
+			free_node(n->value); n->value = NULL;
 			break;
 		}
 		case nt_fun:
 		{
-			node_fun_t *nf = (node_fun_t*)node;
-			free_node(nf->value);
-			for(size_t i = 0; i < nf->count; ++i)
-				free(nf->args[i]);
+			node_fun_t *n = (node_fun_t*)node;
+			free_node(n->value); n->value = NULL;
+			for(size_t i = 0; i < n->count; ++i)
+				free(n->args[i]);
 			break;
 		}
 		case nt_cll:
 		{
-			node_cll_t *nf = (node_cll_t*)node;
-			free_node(nf->value);
-			for(size_t i = 0; i < nf->count; ++i)
-				free_node(nf->args[i]);
+			node_cll_t *n = (node_cll_t*)node;
+			free_node(n->value); n->value = NULL;
+			for(size_t i = 0; i < n->count; ++i)
+			{
+				free_node(n->args[i]);
+				n->args[i] = NULL;
+			}
 			break;
 		}
 		case nt_set:
 		{
-			node_set_t* nl = (node_set_t*)node;
-			free(nl->name);
-			free_node(nl->value);
+			node_set_t *n = (node_set_t*)node;
+			free(n->name);
+			free_node(n->value); n->value = NULL;
 			break;
 		}
 		case nt_bin:
 		{
-			node_bin_t *nb = (node_bin_t*)node;
-			free_node(nb->lhs);
-			free_node(nb->rhs);
+			node_bin_t *n = (node_bin_t*)node;
+			free_node(n->lhs); n->lhs = NULL;
+			free_node(n->rhs); n->rhs = NULL;
 			break;
 		}
 		default:

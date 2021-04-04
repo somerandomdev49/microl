@@ -24,9 +24,12 @@ obj_t *stdlib_decl_tostring(ctx_t *ctx, size_t count, obj_t *args[])
         stdlib_error_arg_count("tostring()", 1, count);
         return NULL;
     }
-    char str[MICROL_STR_OBJ_LIM];
-    string_obj((char**)str, MICROL_STR_OBJ_LIM, args[0]);
-    obj_t *o = create_str_obj(ctx, "asd");
+    char *str = malloc(MICROL_STR_OBJ_LIM);
+    //str[0] = 0;
+    string_obj((char**)&str, MICROL_STR_OBJ_LIM, args[0]);
+	//printf("oh look here's my string: \"%s\"\n", str);
+    free(str);
+    obj_t *o = create_str_obj(ctx, str);
     return o;
 }
 
@@ -43,7 +46,7 @@ obj_t *stdlib_decl_write(ctx_t *ctx, size_t count, obj_t *args[])
         return NULL;
     }
 
-    printf("%s", args[0]->value.str);
+    printf("%s\n", args[0]->value.str);
     return NULL;
 }
 
