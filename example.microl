@@ -1,8 +1,4 @@
 let write = func(v)
     __write(tostring(v))
 
-let sum = func(x)
-    if x < 2 then x
-    else x + sum(x - 1)
-
-write(tostring(sum(3)))
+write(tostring((func(x) if x < 2 then x else x + @(x - 1))(4)))

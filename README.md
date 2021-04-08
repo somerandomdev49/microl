@@ -22,17 +22,23 @@ end
 functions:
 
 ```lua
-let fib = func(x) do
-    if x < 2 then x
-    else fib(x - 1) + fib(x - 2)
-end
+let write = func(v)
+    __write(tostring(v))
 
-let output = fib(6)
+let sum = func(x)
+    if x < 2 then x
+    else x + sum(x - 1)
+
+write(tostring(sum(3)))
+
 ```
 
 this does the same thing:
 ```lua
-let output = (func(x) if x < 2 then x else @(x - 1) + @(x - 2))(6)
+let write = func(v)
+    __write(tostring(v))
+
+write(tostring((func(x) if x < 2 then x else x + @(x - 1))(3)))
 ```
 
 
@@ -60,9 +66,9 @@ The value printed is the value of the `output` variable.
 * [x] ~~add if and loops~~
 * [x] ~~change from `double` to some kind of `obj_t` for the interpreter.~~
 * [x] ~~add functions.~~
+* [x] add stdlib - *in progress*
 * [ ] unify object allocation functions.
 * [ ] make object values separate. a simple number takes up a lot of memory!
 * [ ] add strings.
 * [ ] add parser support for nil.
 * [ ] change `get != ... then error` to `peek != ... then error else del`
-* [ ] add stdlib - *in progress*
