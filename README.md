@@ -22,10 +22,10 @@ end
 functions:
 
 ```lua
-let write = func(v)
+let write = function(v)
     __write(tostring(v))
 
-let sum = func(x)
+let sum = function(x)
     if x < 2 then x
     else x + sum(x - 1)
 
@@ -35,10 +35,10 @@ write(tostring(sum(3)))
 
 this does the same thing:
 ```lua
-let write = func(v)
+let write = function(v)
     __write(tostring(v))
 
-write(tostring((func(x) if x < 2 then x else x + @(x - 1))(3)))
+write(tostring((function(x) if x < 2 then x else x + @(x - 1))(3)))
 ```
 
 

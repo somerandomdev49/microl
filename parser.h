@@ -366,21 +366,21 @@ node_t *parse_expr(parser_t *p)
 			return (node_t*)create_brk_node();
 		}
 
-		if(strcmp(tok.value, "debug") == 0)
+		// if(strcmp(tok.value, "debug") == 0)
+		// {
+		// 	// "break"
+
+		// 	p_del(p); // skip "debug"
+		// 	node_t *expr = parse_expr(p);
+
+		// 	return (node_t*)create_dbg_node(expr);
+		// }
+
+		if(strcmp(tok.value, "function") == 0)
 		{
-			// "break"
+			// "function" "(" args ")" expr
 
-			p_del(p); // skip "debug"
-			node_t *expr = parse_expr(p);
-
-			return (node_t*)create_dbg_node(expr);
-		}
-
-		if(strcmp(tok.value, "func") == 0)
-		{
-			// "func" "(" args ")" expr
-
-			p_del(p); // skip "func"
+			p_del(p); // skip "function"
 			ptr_list_t args = parse_args(p);
 			node_t *expr = parse_expr(p);
 
