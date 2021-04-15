@@ -19,6 +19,7 @@ void stdlib_error_arg_type(const char *from, char expected, char got)
 
 obj_t *stdlib_decl_tostring(ctx_t *ctx, size_t count, obj_t *args[])
 {
+	//puts("tostring");
     if(count != 1)
     {
         stdlib_error_arg_count("tostring()", 1, count);
@@ -28,13 +29,15 @@ obj_t *stdlib_decl_tostring(ctx_t *ctx, size_t count, obj_t *args[])
     //str[0] = 0;
     string_obj((char**)&str, MICROL_STR_OBJ_LIM, args[0]);
 	//printf("oh look here's my string: \"%s\"\n", str);
-    free(str);
     obj_t *o = create_str_obj(ctx, str);
+	//printf("tostring() = '%s'", str);
+    free(str);
     return o;
 }
 
 obj_t *stdlib_decl_write(ctx_t *ctx, size_t count, obj_t *args[])
 {
+	//puts("write");
     if(count != 1)
     {
         stdlib_error_arg_count("__write()", 1, count);

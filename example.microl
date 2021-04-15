@@ -1,4 +1,7 @@
+
 let write = function(v)
     __write(tostring(v))
 
-write(tostring((function(x) if x < 2 then x else x + @(x - 1))(4)))
+write(tostring((
+	function(x) if x < 2 then x else x + @(x - 1)
+)(4)))
