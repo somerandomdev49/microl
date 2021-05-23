@@ -56,6 +56,7 @@ token_list_t lex(FILE *fptr)
 		else if(c == ',') add_token(&toks, (token_t){ NULL, tt_cma });
 		else if(c == '<') add_token(&toks, (token_t){ NULL, tt_lst });
 		else if(c == '>') add_token(&toks, (token_t){ NULL, tt_grt });
+		else if(c == '.') add_token(&toks, (token_t){ NULL, tt_dot });
 		else if(c == '=')
 		{
 			char d = getc(fptr);
@@ -71,7 +72,7 @@ token_list_t lex(FILE *fptr)
 		{
 			fprintf(stderr, "error: lexer -> unknown character: '%c'\n", c);
 		}
-		// TODO: Other symbols like ; : . = and so on.
+		// TODO: Other symbols like ; : and so on. maybe?
 	}
 	return toks;
 }

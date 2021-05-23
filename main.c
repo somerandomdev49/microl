@@ -13,11 +13,7 @@
 #define dmain_printf(...) //printf(__VA_ARGS__)
 #define dmain_puts(...) //puts(__VA_ARGS__)
 
-#include "lexer.h"
-#include "ast.h"
-#include "parser.h"
 #include "intr.h"
-#include "stdlib.h"
 
 void help(const char *name)
 {
@@ -36,54 +32,6 @@ void about()
 	printf("microl language\nversion %d.%d\n", VERSION_MAJOR, VERSION_MINOR);
 }
 
-void run(const char *filename)
-{
-	FILE *fptr = fopen(filename, "r");
-	token_list_t toks = lex(fptr);
-	fclose(fptr);
-
-	dmain_puts("creating parser...");
-	parser_t parser = create_parser(&toks);
-
-	dmain_puts("parsing...");
-	node_t *n = parse(&parser);
-
-	dmain_puts("deleting excess tokens...");
-	del_all_tokens(&toks);
-	if(parser.fail)
-	{
-		if(n) free_node(n);
-		return;
-	}
-
-	dmain_puts("context init");
-	ctx_t ctx = create_context(NULL);
-	dmain_puts("stdlib init");
-	stdlib_context(&ctx);
-	dmain_puts("eval");
-	eval_node(n, &ctx);
-	dmain_puts("output");
-	// var_t *output = get_var(&ctx, "output");
-	// if(output)
-	// {
-	// 	if(!output->value)
-	// 	{
-	// 		fprintf(stderr, "could not display \"output\" due to errors!\n");
-	// 	}
-	// 	else
-	// 	{
-	// 		print_obj(output->value);
-	// 		putc('\n', stdout);
-	// 	}
-	// }
-	// else
-	// 	fprintf(stderr, "No variable with name \"output\" found!\n");
-
-	free_context(&ctx);
-	dmain_puts("freeing...");
-	if(n) free_node(n);
-}
-
 int cli(int argc, char **argv)
 {
 	const char *program_name = argv[0];
@@ -97,7 +45,7 @@ int cli(int argc, char **argv)
 	if(strcmp(command, "run") == 0)
 	{
 		if(args_count != 1) return help(program_name), 1;
-		run(args[0]);
+		run_file(args[0]);
 	}
 	else if(strcmp(command, "help") == 0)
 	{

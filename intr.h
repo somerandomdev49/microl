@@ -4,6 +4,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include "stdlib.h"
+#include "token.h"
+#include "parser.h"
+#include "lexer.h"
 #include "ast.h"
 #include "ctx.h"
 
@@ -59,6 +63,46 @@ char *string_node(node_t *node)
 	}
 }
 
+
+obj_t *eval_node(node_t *node, ctx_t *ctx);
+ctx_t *run_file(const char *filename)
+{
+	FILE *fptr = fopen(filename, "r");
+	if(!fptr)
+	{
+		fprintf(stderr, "error -> file: could not run '%s'.\n", filename);
+		return NULL;
+	}
+	token_list_t toks = lex(fptr);
+	fclose(fptr);
+
+	dmain_puts("creating parser...");
+	parser_t parser = create_parser(&toks);
+
+	dmain_puts("parsing...");
+	node_t *n = parse(&parser);
+
+	dmain_puts("deleting excess tokens...");
+	del_all_tokens(&toks);
+	if(parser.fail)
+	{
+		if(n) free_node(n);
+		return NULL;
+	}
+
+	dmain_puts("context init");
+	ctx_t *ctx = malloc(sizeof(ctx_t));
+	*ctx = create_context(NULL);
+	dmain_puts("stdlib init");
+	stdlib_context(ctx);
+	dmain_puts("eval");
+	eval_node(n, ctx);
+	dmain_puts("output");
+	free_context(ctx);
+	dmain_puts("freeing...");
+	if(n) free_node(n);
+	return ctx;
+}
 
 obj_t *eval_node(node_t *node, ctx_t *ctx)
 {
@@ -166,11 +210,11 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			if(!o) return NULL;
 			if(o->type == ot_nat)
 			{
-				if(nc->count == 0) return o->value.nat(ctx, 0, NULL);
+				if(nc->count == 0) return ((obj_nat_t*)o)->nat(ctx, 0, NULL);
 				obj_t *args[nc->count];
 				for(size_t i = 0; i < nc->count; ++i)
 					args[i] = eval_node(nc->args[i], ctx);
-				return o->value.nat(ctx, nc->count, args);
+				return ((obj_nat_t*)o)->nat(ctx, nc->count, args);
 			}
 			// puts("FUNCTION CALL NON-NATIVE");
 
@@ -179,13 +223,13 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				fprintf(stderr, "error: eval -> can only call a function!\n");
 				return NULL;
 			}
-			if(o->value.fun.count > nc->count)
+			if(((obj_fun_t*)o)->count > nc->count)
 			{
 				fprintf(
 					stderr,
 					"error: eval -> function needs %zu argument%s, but %zu %s provided!\n",
-					o->value.fun.count,
-					o->value.fun.count == 1 ? "" : "s",
+					((obj_fun_t*)o)->count,
+					((obj_fun_t*)o)->count == 1 ? "" : "s",
 					nc->count,
 					nc->count == 1 ? "was" : "were"
 				);
@@ -195,9 +239,9 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			add_var(&fctx, create_var("@", o));
 			for(size_t i = 0; i < nc->count; ++i)
 				add_var(&fctx, create_var(
-					o->value.fun.args[i],
+					((obj_fun_t*)o)->args[i],
 					eval_node(nc->args[i], ctx)));
-			obj_t *v = eval_node(o->value.fun.body, &fctx);
+			obj_t *v = eval_node(((obj_fun_t*)o)->body, &fctx);
 			obj_t *c = copy_obj(ctx, v);
 			free_context(&fctx);
 			// puts("FUNCTION RETURN NON-NATIVE");
@@ -245,8 +289,8 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				return NULL;
 			}
 
-			double lhs = lhs_o->value.num;
-			double rhs = rhs_o->value.num;
+			double lhs = ((obj_num_t*)lhs_o)->num;
+			double rhs = ((obj_num_t*)rhs_o)->num;
 
 			switch(nb->value)
 			{
@@ -264,6 +308,29 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 					fprintf(stderr, "error: eval -> bin op not implemented.\n");
 					return NULL;
 			}
+		}
+		case nt_imp: // TODO! Fix stuff here...
+		{
+			node_imp_t* n = (node_imp_t*)node;
+			static const char prefix[] = "./stdlib/";
+			static const char suffix[] = ".microl";
+
+			size_t value_len = strlen(n->value);
+			char dest[sizeof(prefix) + value_len + sizeof(suffix) + 1];
+			dest[sizeof(dest)] = '\0';
+
+			strcpy(dest, prefix);
+			dest[sizeof(prefix)] = '\0';
+
+			strcat(dest, n->value);
+			dest[sizeof(prefix) + value_len] = '\0';
+
+			strcat(dest, suffix);
+			dest[sizeof(prefix) + value_len + sizeof(suffix)] = '\0';
+
+			ctx_t *c = run_file(dest);
+			add_var(ctx, create_var(n->value, create_ctx_obj(c)));
+			break;
 		}
 		default:
 			fprintf(stderr, "error: eval -> not implemented.\n");

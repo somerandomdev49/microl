@@ -4,31 +4,34 @@
 
 char *copy_string(const char *other);
 
-typedef struct obj_t obj_t;
 typedef struct ctx_t ctx_t;
 
-struct obj_t
+enum obj_type_t
 {
-	enum
-	{
-		ot_num, ot_str, ot_nil,
-		ot_fun, ot_obj, ot_arr,
-		ot_nat, //   TODO!   //
-	} type;
-	union
-	{
-		struct {} nil; // does nothing, for clarity.
-		double num;
-		char *str;
-		obj_t *(*nat)(ctx_t*, size_t, obj_t**);
-		struct
-		{
-			size_t count;
-			char **args;
-			node_t *body;
-		} fun;
-	} value;
+	ot_num, ot_str, ot_nil,
+	ot_fun, ot_obj, ot_arr,
+	ot_nat, //   TODO!   //
 };
+
+#define obj_header_t enum obj_type_t type;
+typedef struct { obj_header_t; } obj_t;
+#define obj_typedef(name, ...) \
+	typedef struct { obj_header_t; __VA_ARGS__; } obj_##name##_t;
+
+obj_typedef(num, double num;);
+obj_typedef(str, char *str;);
+obj_typedef(nat, obj_t *(*nat)(ctx_t*, size_t, obj_t**););
+obj_typedef(fun, size_t count; char **args; node_t *body;);
+typedef struct t_001 { obj_t *l, *r; struct t_001 *n; } obj_obj_pair_t;
+obj_obj_pair_t *new_pair(obj_t *l, obj_t *r, obj_obj_pair_t *n)
+{
+	obj_obj_pair_t *p = malloc(sizeof(obj_obj_pair_t));
+	p->l = l;
+	p->r = r;
+	p->n = n;
+	return p;
+}
+obj_typedef(obj, size_t count; obj_obj_pair_t );
 
 typedef struct
 {
@@ -64,65 +67,65 @@ bool obj_is_true(obj_t *o)
     if(!o) return false;
     switch (o->type) {
 		case ot_nil: return false;
-		case ot_num: return o->value.num;
-		case ot_str: return o->value.str && strlen(o->value.str);
+		case ot_num: return ((obj_num_t*)o)->num;
+		case ot_str: return ((obj_str_t*)o)->str && strlen(((obj_str_t*)o)->str);
 		default: return false;
 	}
 }
-#define alloc_obj() malloc(sizeof(obj_t))
+#define alloc_obj(type) malloc(sizeof(obj_##type##_t))
 
 obj_t *create_nil_obj(ctx_t *ctx)
 {
-	obj_t *o = alloc_obj();
+	obj_t *o = malloc(sizeof(obj_t));
 	o->type = ot_nil;
-	add_obj(ctx, o);
-	return o;
+	add_obj(ctx, (obj_t*)o);
+	return (obj_t*)o;
 }
 
 obj_t *create_num_obj(ctx_t *ctx, double value)
 {
-	obj_t *o = alloc_obj();
+	obj_num_t *o = alloc_obj(num);
 	o->type = ot_num;
-	o->value.num = value;
-	add_obj(ctx, o);
-	return o;
+	o->num = value;
+	add_obj(ctx, (obj_t*)o);
+	return (obj_t*)o;
 }
 
 obj_t *create_str_obj(ctx_t *ctx, const char *value)
 {
-	obj_t *o = alloc_obj();
+	obj_str_t *o = alloc_obj(str);
 	o->type = ot_str;
-	o->value.str = copy_string(value);
-	add_obj(ctx, o);
-	return o;
+	o->str = copy_string(value);
+	add_obj(ctx, (obj_t*)o);
+	return (obj_t*)o;
 }
 
 obj_t *create_fun_obj(ctx_t *ctx, size_t count, char **args, node_t *body)
 {
-	obj_t *o = alloc_obj();
+	obj_fun_t *o = alloc_obj(fun);
 	o->type = ot_fun;
-	o->value.fun.count = count;
-	o->value.fun.body = body;
-	o->value.fun.args = malloc(sizeof(char*) * count);
+	o->count = count;
+	o->body = body;
+	o->args = malloc(sizeof(char*) * count);
 	for(size_t i = 0; i < count; ++i)
-		o->value.fun.args[i] = copy_string(args[i]);
-	add_obj(ctx, o);
-	return o;
+		o->args[i] = copy_string(args[i]);
+	add_obj(ctx, (obj_t*)o);
+	return (obj_t*)o;
 }
 
 obj_t *create_nat_obj(ctx_t *ctx, obj_t *(*nat)(ctx_t*, size_t, obj_t**))
 {
 	//puts("create nat");
 	//puts("create nat alloc");
-	obj_t *o = alloc_obj();
+	obj_nat_t *o = alloc_obj(nat);
 	//puts("create nat type");
 	o->type = ot_nat;
 	//puts("create nat type");
-	o->value.nat = nat;
+	o->nat = nat;
 	//puts("create nat add");
-	add_obj(ctx, o);
+	add_obj(ctx, (obj_t*)o);
 	//puts("create nat ret");
-	return o;
+	return (obj_t*)o;
 }
 
 obj_t *copy_obj(ctx_t *ctx, obj_t *o)
@@ -130,17 +133,17 @@ obj_t *copy_obj(ctx_t *ctx, obj_t *o)
 	if(!o) return NULL;
 	switch (o->type) {
 		case ot_nil: return create_nil_obj(ctx);
-		case ot_num: return create_num_obj(ctx, o->value.num);
+		case ot_num: return create_num_obj(ctx, ((obj_num_t*)o)->num);
 
 		case ot_str:
-			return create_str_obj(ctx, copy_string(o->value.str));
+			return create_str_obj(ctx, copy_string(((obj_str_t*)o)->str));
 		case ot_nat:
-			return create_nat_obj(ctx, o->value.nat);
+			return create_nat_obj(ctx, ((obj_nat_t*)o)->nat);
 		case ot_fun:
 			return create_fun_obj(ctx,
-					o->value.fun.count,
-					o->value.fun.args,
-					o->value.fun.body);
+				((obj_fun_t*)o)->count,
+				((obj_fun_t*)o)->args,
+				((obj_fun_t*)o)->body);
 		default:
             fprintf(stderr, "error: eval -> copy obj not implemented\n");
 			return NULL;
@@ -155,12 +158,12 @@ void free_obj(obj_t *o)
 		case ot_nat:
 		case ot_num: break;
 		case ot_str:
-			free(o->value.str);
+			free(((obj_str_t*)o)->str);
 			break;
 		case ot_fun:
-			for(size_t i = 0; i < o->value.fun.count; ++i)
-				free(o->value.fun.args[i]);
-			free(o->value.fun.args);
+			for(size_t i = 0; i < ((obj_fun_t*)o)->count; ++i)
+				free(((obj_fun_t*)o)->args[i]);
+			free(((obj_fun_t*)o)->args);
 			break;
 		default:
             fprintf(stderr, "error: eval -> free obj %d not implemented\n", o->type);
@@ -197,8 +200,8 @@ void string_obj(char **buf, size_t bufsz, obj_t *o)
         case ot_nat: snprintf(*buf, bufsz, "[ native ]"); break;
         case ot_num:
 			// printf("hmmmm: %f\n", o->value.num);
-			snprintf(*buf, bufsz, "%f", o->value.num); break;
-        case ot_str: snprintf(*buf, bufsz, "%s", o->value.str); break;
+			snprintf(*buf, bufsz, "%f", ((obj_num_t*)o)->num); break;
+        case ot_str: snprintf(*buf, bufsz, "%s", ((obj_str_t*)o)->str); break;
         default:
             fprintf(stderr, "error: eval -> string obj %d not implemented\n", o->type);
 			snprintf(*buf, bufsz, "[ internal error ]");

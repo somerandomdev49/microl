@@ -46,7 +46,7 @@ obj_t *stdlib_decl_write(ctx_t *ctx, size_t count, obj_t *args[])
         return NULL;
     }
 
-    printf("%s\n", args[0]->value.str);
+    printf("%s\n", ((obj_str_t*)args[0])->str);
     return NULL;
 }
 

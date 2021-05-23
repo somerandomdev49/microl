@@ -156,14 +156,24 @@ ptr_list_t parse_cargs(parser_t *p) // cargs -> call args.
 node_t *parse_suffix(parser_t *p)
 {
 	node_t *n = parse_atom(p);
-	if(p_peek(p).type == tt_open_paren)
-	{ // <expr> <cargs>
-		ptr_list_t args = parse_cargs(p);
-		node_cll_t *m = create_cll_node(n, args.count, (node_t**)args.data);
-		free_ptr_list(&args, NULL);
-		return (node_t*)m;
+	for(;;)
+	{
+		if(p_peek(p).type == tt_open_paren)
+		{ // <expr> <cargs>
+			ptr_list_t args = parse_cargs(p);
+			node_cll_t *m = create_cll_node(n, args.count, (node_t**)args.data);
+			free_ptr_list(&args, NULL);
+			return (node_t*)m;
+		}
+		else if(p_peek(p).type == tt_dot)
+		{ // <expr> . <atom>
+		  //            ^
+		  //             \___ eval result must be a string [?] TODO
+			p_del(p); // remove '.'
+			n = (node_t*)create_get_node(n, parse_atom(p));
+		}
+		else return n;
 	}
-	else return n;
 }
 
 node_t *parse_prefix(parser_t *p)
@@ -256,6 +266,11 @@ node_seq_t *parse_seq(parser_t *p, token_t end, bool new)
 		if(n) node_seq_add_node(seq, n);
 	}
 	return seq;
+}
+
+node_imp_t *parse_import(parser_t *p)
+{
+	return create_imp_node(p_get(p).value);
 }
 
 ptr_list_t parse_args(parser_t *p)
@@ -387,6 +402,14 @@ node_t *parse_expr(parser_t *p)
 			node_fun_t *f = create_fun_node(expr, args.count, (char**)args.data);
 			free_ptr_list(&args, &free);
 			return (node_t*)f;
+		}
+
+		if(strcmp(tok.value, "import") == 0)
+		{
+			// "import" name
+
+			p_del(p); // skip "import"
+			return (node_t*)parse_import(p);
 		}
 
 

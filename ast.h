@@ -21,7 +21,7 @@ typedef enum
 	nt_bin, nt_let, nt_seq,
 	nt_set, nt_iff, nt_for,
 	nt_brk, nt_ret, nt_cll,
-	nt_fun, nt_dbg, //TODO!
+	nt_fun, nt_dbg, nt_imp,
 } node_type_t;
 
 typedef struct
@@ -72,6 +72,25 @@ node_var_t *create_var_node(char *value)
 
 
 
+
+// IMP NODE //
+
+typedef struct
+{
+	node_t node;
+	char *value;
+} node_imp_t;
+
+node_imp_t *create_imp_node(char *value)
+{
+	node_imp_t *n = alloc_node(var);
+	n->node.type = nt_imp;
+	n->value = copy_string(value);
+	return n;
+}
+
+
+
 // BIN NODE //
 
 typedef struct
@@ -96,7 +115,6 @@ typedef struct
 	} value;
 } node_bin_t;
 
-// TODO: Bug, needed to switch rhs/lhs: check what is wrong...
 node_bin_t *create_bin_node(char op, node_t *lhs, node_t *rhs)
 {
 	node_bin_t *n = alloc_node(bin);
@@ -292,6 +310,28 @@ node_set_t *create_set_node(char *name, node_t *value)
 
 
 
+// GET NODE //
+
+typedef struct
+{
+	node_t node;
+	char *name;
+	node_t *value;
+} node_get_t;
+
+node_set_t *create_set_node(char *name, node_t *value)
+{
+	node_set_t *n = alloc_node(set);
+	n->node.type = nt_set;
+	n->value = value;
+
+	size_t len = strlen(name) + 1; // null-terminator included!
+	n->name = malloc(len);
+	memcpy(n->name, name, len);
+	return n;
+}
+
+
 
 // SEQ NODE //
 
@@ -370,6 +410,12 @@ void free_node(node_t *node)
 		case nt_var:
 		{
 			node_var_t *n = (node_var_t*)node;
+			free(n->value);
+			break;
+		}
+		case nt_imp:
+		{
+			node_imp_t *n = (node_imp_t*)node;
 			free(n->value);
 			break;
 		}
