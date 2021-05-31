@@ -67,9 +67,9 @@ The value printed is the value of the `output` variable.
 * [x] ~~change from `double` to some kind of `obj_t` for the interpreter.~~
 * [x] ~~add functions.~~
 * [x] add stdlib - *in progress*
-* [ ] add modules!
+* [ ] add modules! - *in progress*
 * [ ] unify object allocation functions.
-* [ ] make object values separate. a simple number takes up a lot of memory!
-* [ ] add strings.
+* [x] ~~make object values separate. a simple number takes up a lot of memory!~~
+* [ ] add parser support for strings.
 * [ ] add parser support for nil.
 * [ ] change `get != ... then error` to `peek != ... then error else del`

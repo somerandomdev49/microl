@@ -3,7 +3,6 @@
 #include "ast.h"
 
 char *copy_string(const char *other);
-
 typedef struct ctx_t ctx_t;
 
 enum obj_type_t
@@ -31,7 +30,7 @@ obj_obj_pair_t *new_pair(obj_t *l, obj_t *r, obj_obj_pair_t *n)
 	p->n = n;
 	return p;
 }
-obj_typedef(obj, size_t count; obj_obj_pair_t );
+obj_typedef(obj, size_t count; obj_obj_pair_t *first;);
 
 typedef struct
 {
@@ -73,6 +72,7 @@ bool obj_is_true(obj_t *o)
 	}
 }
 #define alloc_obj(type) malloc(sizeof(obj_##type##_t))
+obj_t *copy_obj(ctx_t *ctx, obj_t *o);
 
 obj_t *create_nil_obj(ctx_t *ctx)
 {
@@ -128,6 +128,30 @@ obj_t *create_nat_obj(ctx_t *ctx, obj_t *(*nat)(ctx_t*, size_t, obj_t**))
 	return (obj_t*)o;
 }
 
+obj_t *create_obj_obj(ctx_t *ctx, ctx_t *from)
+{
+	puts("create obj obj");
+	printf("ctx: 0x%x, from: 0x%x\n", ctx, from);
+	obj_obj_t *o = alloc_obj(obj);
+	o->type = ot_obj;
+	o->count = from->count;
+	printf("count: %d\n", o->count);
+
+	obj_obj_pair_t **p = &(o->first);
+	for(size_t i = 0; i < from->count; ++i)
+	{
+		*p = new_pair(
+			create_str_obj(ctx, from->vars[i].name),
+			copy_obj(ctx, from->vars[i].value),
+			NULL);
+		printf("'%s' -> i: %d, p: 0x%x\n", from->vars[i].name, i, *p);
+		*p = (*p)->n;
+	}
+	add_obj(ctx, (obj_t*)o);
+	return (obj_t*)o;
+}
+
+// TODO: Can we just copy memory to the new context loc?
 obj_t *copy_obj(ctx_t *ctx, obj_t *o)
 {
 	if(!o) return NULL;
@@ -165,6 +189,13 @@ void free_obj(obj_t *o)
 				free(((obj_fun_t*)o)->args[i]);
 			free(((obj_fun_t*)o)->args);
 			break;
+		case ot_obj:
+			for(obj_obj_pair_t *p = ((obj_obj_t*)o)->first; p; p = p->n)
+			{
+				free_obj(p->l);
+				free_obj(p->r);
+			}
+			break;
 		default:
             fprintf(stderr, "error: eval -> free obj %d not implemented\n", o->type);
 			return;
@@ -181,14 +212,16 @@ char *string_type(char type)
         case ot_nat: return "native";
         case ot_num: return "number";
         case ot_str: return "string";
+        case ot_arr: return "array";
+        case ot_obj: return "map";
         default:
             fprintf(stderr, "error: eval -> string type not implemented\n");
 			return NULL;
     }
 }
 
-// Beware: bufsz is ignored for ot_nil, ot_fun, ot_nat.
-// at most 'bufsz' bytes are written to buf.
+
+// At most 'bufsz' bytes are written to buf.
 void string_obj(char **buf, size_t bufsz, obj_t *o)
 {
 	//snprintf(*buf, bufsz, "[ internal error ]");
@@ -209,15 +242,19 @@ void string_obj(char **buf, size_t bufsz, obj_t *o)
     }
 }
 
-// convert to
-// char *obj_to_string(obj_t *o);
-void print_obj(obj_t *o)
+void fprint_obj(FILE *f, obj_t *o)
 {
 	if(!o) return;
+	// TODO: Remove restriction on amount of bytes that can be written.
     char *str = malloc(MICROL_STR_OBJ_LIM);
 	string_obj((char**)&str, MICROL_STR_OBJ_LIM, o);
-	printf("%s", str);
+	fprintf(f, "%s", str);
 	free(str);
+}
+
+void print_obj(obj_t *o)
+{
+	fprint_obj(stdout, o);
 }
 
 

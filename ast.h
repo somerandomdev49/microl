@@ -21,7 +21,7 @@ typedef enum
 	nt_bin, nt_let, nt_seq,
 	nt_set, nt_iff, nt_for,
 	nt_brk, nt_ret, nt_cll,
-	nt_fun, nt_dbg, nt_imp,
+	nt_fun, nt_get, nt_imp,
 } node_type_t;
 
 typedef struct
@@ -218,27 +218,7 @@ node_ret_t *create_ret_node(node_t *value)
 	n->node.type = nt_ret;
 	n->value = value;
 	return n;
-}
-
-
-
-
-// DBG NODE //
-
-typedef struct
-{
-	node_t node;
-	node_t *value;
-} node_dbg_t;
-
-node_dbg_t *create_dbg_node(node_t *value)
-{
-	node_dbg_t *n = alloc_node(dbg);
-	n->node.type = nt_dbg;
-	n->value = value;
-	return n;
-}
-
+};
 
 
 // FUN NODE //
@@ -301,10 +281,7 @@ node_set_t *create_set_node(char *name, node_t *value)
 	node_set_t *n = alloc_node(set);
 	n->node.type = nt_set;
 	n->value = value;
-
-	size_t len = strlen(name) + 1; // null-terminator included!
-	n->name = malloc(len);
-	memcpy(n->name, name, len);
+	n->name = copy_string(name);
 	return n;
 }
 
@@ -315,19 +292,16 @@ node_set_t *create_set_node(char *name, node_t *value)
 typedef struct
 {
 	node_t node;
-	char *name;
+	node_t *from;
 	node_t *value;
 } node_get_t;
 
-node_set_t *create_set_node(char *name, node_t *value)
+node_get_t *create_get_node(node_t *from, node_t *value)
 {
-	node_set_t *n = alloc_node(set);
-	n->node.type = nt_set;
+	node_get_t *n = alloc_node(get);
+	n->node.type = nt_get;
+	n->from = from;
 	n->value = value;
-
-	size_t len = strlen(name) + 1; // null-terminator included!
-	n->name = malloc(len);
-	memcpy(n->name, name, len);
 	return n;
 }
 
@@ -401,12 +375,6 @@ void free_node(node_t *node)
 		case nt_brk: break;
 
 		case nt_ret:
-		case nt_dbg:
-		{
-			node_dbg_t *n = (node_dbg_t*)node;
-			free_node(n->value); n->value = NULL;
-			break;
-		}
 		case nt_var:
 		{
 			node_var_t *n = (node_var_t*)node;
@@ -470,6 +438,13 @@ void free_node(node_t *node)
 		{
 			node_set_t *n = (node_set_t*)node;
 			free(n->name);
+			free_node(n->value); n->value = NULL;
+			break;
+		}
+		case nt_get:
+		{
+			node_get_t *n = (node_get_t*)node;
+			free_node(n->from); n->from = NULL;
 			free_node(n->value); n->value = NULL;
 			break;
 		}

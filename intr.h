@@ -28,11 +28,11 @@ char *string_node(node_t *node)
 		case nt_num: return "num";
 		case nt_var: return "var";
 		case nt_set: return "set";
+		case nt_get: return "get";
 		case nt_let: return "let";
 		case nt_iff: return "iff";
 		case nt_brk: return "brk";
 		case nt_ret: return "for";
-		case nt_dbg: return "dbg";
 		case nt_for: return "for";
 		case nt_fun: return "fun";
 		case nt_cll: return "cll";
@@ -67,6 +67,7 @@ char *string_node(node_t *node)
 obj_t *eval_node(node_t *node, ctx_t *ctx);
 ctx_t *run_file(const char *filename)
 {
+	printf("run file: %s\n", filename);
 	FILE *fptr = fopen(filename, "r");
 	if(!fptr)
 	{
@@ -90,6 +91,8 @@ ctx_t *run_file(const char *filename)
 		return NULL;
 	}
 
+
+	// TODO Variables aren't added to `ctx` itself?
 	dmain_puts("context init");
 	ctx_t *ctx = malloc(sizeof(ctx_t));
 	*ctx = create_context(NULL);
@@ -98,9 +101,14 @@ ctx_t *run_file(const char *filename)
 	dmain_puts("eval");
 	eval_node(n, ctx);
 	dmain_puts("output");
-	free_context(ctx);
-	dmain_puts("freeing...");
+	
 	if(n) free_node(n);
+
+	for(size_t i = 0; i < ctx->count; ++i)
+	{
+		printf("VARIABLE %s!\n", ctx->vars[i]);
+	}
+	puts("-- end file eval --");
 	return ctx;
 }
 
@@ -149,6 +157,48 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			v->value = val;
 			return val;
 		}
+		case nt_get:
+		{
+			node_get_t* n = (node_get_t*)node;
+			printf("from node: %s\nval node: %s\n", string_node(n->from), string_node(n->value));
+			obj_t *from = eval_node(n->from, ctx);
+			obj_t *val;
+			if(n->value->type == nt_var)
+				val = create_str_obj(ctx, ((node_var_t*)n)->value);
+			else {
+				puts("create non-string object");
+				val = eval_node(n->value, ctx);
+			}
+
+			if(from->type != ot_obj)
+			{
+				fprintf(stderr, "error: eval -> can only access objects "
+								"using dot-notation from maps.");
+				// TODO:? rename to obj_map_t?
+				return NULL;
+			}
+
+
+			if(((obj_obj_t*)from)->count == 0)
+			{
+				fprintf(stderr, "error: eval -> map count zero\n");
+				return NULL;
+			}
+			printf("wow such manyes %d\n", ((obj_obj_t*)from)->count);
+
+			for(obj_obj_pair_t *p = ((obj_obj_t*)from)->first; p; p = p->n)
+			{
+				// TODO: Object == test
+				printf("wow such '%s'\n", ((obj_str_t*)p->l)->str);
+				if(strcmp(((obj_str_t*)p->l)->str, ((obj_str_t*)val)->str) == 0)
+					return p->r;
+			}
+		
+			fprintf(stderr, "error: eval -> no such obj: ");
+			fprint_obj(stderr, val);
+			fprintf(stderr, ".\n");
+			return NULL;
+		}
 		case nt_let:
 		{
 			node_let_t* nl = (node_let_t*)node;
@@ -173,14 +223,6 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			return NULL;
 		}
 		case nt_ret:
-		case nt_dbg:
-		{
-			node_dbg_t* ng = (node_dbg_t*)node;
-		 	//printf("[debug] -> ");
-			//print_obj(eval_node(ng->value, ctx));
-			putc('\n', stdout);
-			return NULL;
-		}
 		case nt_for:
 		{
 			dintr_puts("m");
@@ -329,11 +371,13 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			dest[sizeof(prefix) + value_len + sizeof(suffix)] = '\0';
 
 			ctx_t *c = run_file(dest);
-			add_var(ctx, create_var(n->value, create_ctx_obj(c)));
+			add_var(ctx, create_var(n->value, create_obj_obj(ctx, c)));
+			free_context(c);
+			dmain_puts("freeing ctx...");
 			break;
 		}
 		default:
-			fprintf(stderr, "error: eval -> not implemented.\n");
+			fprintf(stderr, "error: eval -> not implemented %d.\n", node->type);
 			return NULL;
 	}
 }

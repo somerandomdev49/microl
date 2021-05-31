@@ -169,6 +169,7 @@ node_t *parse_suffix(parser_t *p)
 		{ // <expr> . <atom>
 		  //            ^
 		  //             \___ eval result must be a string [?] TODO
+			puts("DOT!");
 			p_del(p); // remove '.'
 			n = (node_t*)create_get_node(n, parse_atom(p));
 		}
