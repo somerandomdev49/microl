@@ -299,6 +299,8 @@ typedef struct
 node_get_t *create_get_node(node_t *from, node_t *value)
 {
 	node_get_t *n = alloc_node(get);
+	printf("create_get_node: 0x%x\n", n);
+	printf("val: '%s'\n", ((node_var_t*)value)->value);
 	n->node.type = nt_get;
 	n->from = from;
 	n->value = value;
@@ -379,6 +381,7 @@ void free_node(node_t *node)
 		{
 			node_var_t *n = (node_var_t*)node;
 			free(n->value);
+			n->value = "{freed}";
 			break;
 		}
 		case nt_imp:
@@ -437,7 +440,7 @@ void free_node(node_t *node)
 		case nt_set:
 		{
 			node_set_t *n = (node_set_t*)node;
-			free(n->name);
+			free(n->name); n->name = "{freed}";
 			free_node(n->value); n->value = NULL;
 			break;
 		}
@@ -446,6 +449,7 @@ void free_node(node_t *node)
 			node_get_t *n = (node_get_t*)node;
 			free_node(n->from); n->from = NULL;
 			free_node(n->value); n->value = NULL;
+			printf("freeing get node at 0x%x\n", node);
 			break;
 		}
 		case nt_bin:

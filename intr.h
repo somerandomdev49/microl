@@ -11,8 +11,8 @@
 #include "ast.h"
 #include "ctx.h"
 
-#define dintr_puts(...) //puts(__VA_ARGS__)
-#define dintr_printf(...) //printf(__VA_ARGS__)
+#define dintr_puts(...) puts(__VA_ARGS__)
+#define dintr_printf(...) printf(__VA_ARGS__)
 
 
 char *string_node(node_t *node)
@@ -160,12 +160,17 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		case nt_get:
 		{
 			node_get_t* n = (node_get_t*)node;
+			printf("create_get_node -> 0x%x\n", n);
 			printf("from node: %s\nval node: %s\n", string_node(n->from), string_node(n->value));
 			obj_t *from = eval_node(n->from, ctx);
 			obj_t *val;
 			if(n->value->type == nt_var)
+			{
+				printf("create string object '%s'\n", ((node_var_t*)n)->value);
 				val = create_str_obj(ctx, ((node_var_t*)n)->value);
-			else {
+			}
+			else
+			{
 				puts("create non-string object");
 				val = eval_node(n->value, ctx);
 			}
@@ -178,6 +183,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				return NULL;
 			}
 
+			printf("Looking for '%s'.\n", ((obj_str_t*)val)->str);
 
 			if(((obj_obj_t*)from)->count == 0)
 			{
@@ -194,9 +200,9 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 					return p->r;
 			}
 		
-			fprintf(stderr, "error: eval -> no such obj: ");
+			fprintf(stderr, "error: eval -> no such obj: '");
 			fprint_obj(stderr, val);
-			fprintf(stderr, ".\n");
+			fprintf(stderr, "'.\n");
 			return NULL;
 		}
 		case nt_let:
