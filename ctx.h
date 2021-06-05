@@ -145,7 +145,7 @@ obj_t *create_obj_obj(ctx_t *ctx, ctx_t *from)
 			copy_obj(ctx, from->vars[i].value),
 			NULL);
 		printf("'%s' -> i: %d, p: 0x%x\n", from->vars[i].name, i, *p);
-		*p = (*p)->n;
+		p = &(*p)->n;
 	}
 	add_obj(ctx, (obj_t*)o);
 	return (obj_t*)o;

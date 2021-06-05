@@ -125,7 +125,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 	switch(node->type)
 	{
 		case nt_num:
-			dintr_printf("NUM %f\n", ((node_num_t*)node)->value);
+			//dintr_printf("NUM %f\n", ((node_num_t*)node)->value);
 			return create_num_obj(ctx, ((node_num_t*)node)->value);
 		case nt_var:
 		{
@@ -166,8 +166,8 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			obj_t *val;
 			if(n->value->type == nt_var)
 			{
-				printf("create string object '%s'\n", ((node_var_t*)n)->value);
-				val = create_str_obj(ctx, ((node_var_t*)n)->value);
+				printf("create string object '%s'\n", ((node_var_t*)n->value)->value);
+				val = create_str_obj(ctx, ((node_var_t*)n->value)->value);
 			}
 			else
 			{
@@ -190,14 +190,19 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				fprintf(stderr, "error: eval -> map count zero\n");
 				return NULL;
 			}
+
 			printf("wow such manyes %d\n", ((obj_obj_t*)from)->count);
+			printf("first 0x%x\n", ((obj_obj_t*)from)->first);
 
 			for(obj_obj_pair_t *p = ((obj_obj_t*)from)->first; p; p = p->n)
 			{
 				// TODO: Object == test
 				printf("wow such '%s'\n", ((obj_str_t*)p->l)->str);
 				if(strcmp(((obj_str_t*)p->l)->str, ((obj_str_t*)val)->str) == 0)
+				{
+					puts("FOUND!");
 					return p->r;
+				}
 			}
 		
 			fprintf(stderr, "error: eval -> no such obj: '");
@@ -255,6 +260,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		{
 			node_cll_t* nc = (node_cll_t*)node;
 			obj_t *o = eval_node(nc->value, ctx);
+			printf("CALL NODE\n");
 			if(!o) return NULL;
 			if(o->type == ot_nat)
 			{
@@ -264,7 +270,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 					args[i] = eval_node(nc->args[i], ctx);
 				return ((obj_nat_t*)o)->nat(ctx, nc->count, args);
 			}
-			// puts("FUNCTION CALL NON-NATIVE");
+			puts("FUNCTION CALL NON-NATIVE");
 
 			if(o->type != ot_fun)
 			{
@@ -292,7 +298,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			obj_t *v = eval_node(((obj_fun_t*)o)->body, &fctx);
 			obj_t *c = copy_obj(ctx, v);
 			free_context(&fctx);
-			// puts("FUNCTION RETURN NON-NATIVE");
+			puts("FUNCTION RETURN NON-NATIVE");
 			return c;
 		}
 		case nt_seq:
