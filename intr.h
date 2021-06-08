@@ -382,9 +382,9 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			strcat(dest, suffix);
 			dest[sizeof(prefix) + value_len + sizeof(suffix)] = '\0';
 
-			ctx_t *c = run_file(dest);
-			add_var(ctx, create_var(n->value, create_obj_obj(ctx, c)));
-			free_context(c);
+			ctx_t *fileCtx = run_file(dest);
+			add_var(ctx, create_var(n->value, create_obj_obj(ctx, fileCtx)));
+			free_context(fileCtx);
 			dmain_puts("freeing ctx...");
 			break;
 		}

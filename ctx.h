@@ -190,11 +190,16 @@ void free_obj(obj_t *o)
 			free(((obj_fun_t*)o)->args);
 			break;
 		case ot_obj:
-			for(obj_obj_pair_t *p = ((obj_obj_t*)o)->first; p; p = p->n)
-			{
-				free_obj(p->l);
-				free_obj(p->r);
-			}
+			// we don't need to free objects because they will/were
+			// freed by the context.
+			
+			// for(obj_obj_pair_t *p = ((obj_obj_t*)o)->first; p; p = p->n)
+			// {
+			// 	if(!p) break;
+			// 	free_obj(p->r);
+			// 	puts("RIGHT ITEM FREED");
+			// 	free_obj(p->l);
+			// }
 			break;
 		default:
             fprintf(stderr, "error: eval -> free obj %d not implemented\n", o->type);

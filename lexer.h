@@ -18,7 +18,15 @@ token_list_t lex(FILE *fptr)
 		dlex_printf("Read character: '%c'\n", c);
 		// Skip whitespace.
 		while(isspace(c)) c = getc(fptr);
-		if(c == '#') while(c != '\n' && c != EOF) c = getc(fptr);
+		while(c == '#')
+		{
+			puts("COMMENT!!!!!!!!!!!");
+			while(c != '\n' && c != EOF) {
+				printf("COMMENT CHARACTER: '%c'", c);
+				c = getc(fptr);
+			}
+			if(c == '\n') c = getc(fptr);
+		}
 		while(isspace(c)) c = getc(fptr);
 		if(c == EOF) break;
 		dlex_printf("Not space\n");

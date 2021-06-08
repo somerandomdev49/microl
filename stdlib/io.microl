@@ -1,2 +1,1 @@
-let write = function(v)
-    __write(tostring(v))
+let write = function(val) __write(tostring(val))
