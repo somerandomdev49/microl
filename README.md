@@ -4,7 +4,7 @@
 written in C.
 
 ### Examples:
-```lua
+```coffeescript
 let output = 0
 let i = 1
 while i < 10 do
@@ -21,7 +21,7 @@ end
 
 functions:
 
-```lua
+```coffeescript
 let write = function(v)
     __write(tostring(v))
 
@@ -34,13 +34,23 @@ write(tostring(sum(3)))
 ```
 
 this does the same thing:
-```lua
+```coffeescript
 let write = function(v)
     __write(tostring(v))
 
 write(tostring((function(x) if x < 2 then x else x + @(x - 1))(3)))
 ```
 
+modules:
+```coffeescript
+import io
+io.write(1)
+```
+io.microl:
+```coffeescript
+let export io = function(val) __write(tostring(val))
+```
+(beware that currently all modules should be located in `./stdlib/`)
 
 ### Usage:
 ```sh
