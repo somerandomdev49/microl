@@ -10,8 +10,8 @@
 #define true 1
 #define false 0
 
-#define dmain_printf(...) printf(__VA_ARGS__)
-#define dmain_puts(...) puts(__VA_ARGS__)
+#define dmain_printf(...) //printf(__VA_ARGS__)
+#define dmain_puts(...) //puts(__VA_ARGS__)
 
 #include "intr.h"
 

@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #define alloc_node(x) malloc(sizeof(node_##x##_t))
 
-#define dast_printf(...) printf(__VA_ARGS__)
-#define dast_puts(...) puts(__VA_ARGS__)
+#define dast_printf(...) //printf(__VA_ARGS__)
+#define dast_puts(...) //puts(__VA_ARGS__)
 
 char *copy_string(const char *other)
 {
@@ -316,8 +316,8 @@ typedef struct
 node_get_t *create_get_node(node_t *from, node_t *value)
 {
 	node_get_t *n = alloc_node(get);
-	printf("create_get_node: 0x%x\n", n);
-	printf("val: '%s'\n", ((node_var_t*)value)->value);
+	dast_printf("create_get_node: 0x%x\n", n);
+	dast_printf("val: '%s'\n", ((node_var_t*)value)->value);
 	n->node.type = nt_get;
 	n->node.allow_free = true;
 	n->from = from;
@@ -473,7 +473,7 @@ void free_node_imp(node_t *node, bool free_all)
 			node_get_t *n = (node_get_t*)node;
 			free_node_imp(n->from, free_all); n->from = NULL;
 			free_node_imp(n->value, free_all); n->value = NULL;
-			printf("freeing get node at 0x%x\n", node);
+			dast_printf("freeing get node at 0x%x\n", node);
 			break;
 		}
 		case nt_bin:

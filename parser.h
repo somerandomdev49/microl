@@ -169,10 +169,10 @@ node_t *parse_suffix(parser_t *p)
 		{ // <expr> . <atom>
 		  //            ^
 		  //             \___ eval result must be a string [?] TODO
-			puts("DOT!");
+			dparse_puts("DOT!");
 			p_del(p); // remove '.'
 			node_t *a = parse_atom(p);
-			printf("VARIABLE VALUE: '%s'\n\n", ((node_var_t*)a)->value);
+			dparse_printf("VARIABLE VALUE: '%s'\n\n", ((node_var_t*)a)->value);
 			n = (node_t*)create_get_node(n, a);
 		}
 		else return n;

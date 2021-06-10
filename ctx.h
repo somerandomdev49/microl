@@ -2,6 +2,9 @@
 #define MICROL_CTX_H
 #include "ast.h"
 
+#define dctx_printf(...) //printf(__VA_ARGS__)
+#define dctx_puts(...) //puts(__VA_ARGS__)
+
 char *copy_string(const char *other);
 typedef struct ctx_t ctx_t;
 
@@ -131,12 +134,12 @@ obj_t *create_nat_obj(ctx_t *ctx, obj_t *(*nat)(ctx_t*, size_t, obj_t**))
 
 obj_t *create_obj_obj(ctx_t *ctx, ctx_t *from)
 {
-	puts("create obj obj");
-	printf("ctx: 0x%x, from: 0x%x\n", ctx, from);
+	dctx_puts("create obj obj");
+	dctx_printf("ctx: 0x%x, from: 0x%x\n", ctx, from);
 	obj_obj_t *o = alloc_obj(obj);
 	o->type = ot_obj;
 	o->count = from->count;
-	printf("count: %d\n", o->count);
+	dctx_printf("count: %d\n", o->count);
 
 	obj_obj_pair_t **p = &(o->first);
 	for(size_t i = 0; i < from->count; ++i)
@@ -146,7 +149,7 @@ obj_t *create_obj_obj(ctx_t *ctx, ctx_t *from)
 			create_str_obj(ctx, from->vars[i].name),
 			copy_obj(ctx, from->vars[i].value),
 			NULL);
-		printf("'%s' -> i: %d, p: 0x%x\n", from->vars[i].name, i, *p);
+		dctx_printf("'%s' -> i: %d, p: 0x%x\n", from->vars[i].name, i, *p);
 		p = &(*p)->n;
 	}
 	add_obj(ctx, (obj_t*)o);

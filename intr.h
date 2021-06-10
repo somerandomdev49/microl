@@ -11,8 +11,8 @@
 #include "ast.h"
 #include "ctx.h"
 
-#define dintr_puts(...) puts(__VA_ARGS__)
-#define dintr_printf(...) printf(__VA_ARGS__)
+#define dintr_puts(...) //puts(__VA_ARGS__)
+#define dintr_printf(...) //printf(__VA_ARGS__)
 
 
 char *string_node(node_t *node)
@@ -67,7 +67,7 @@ char *string_node(node_t *node)
 obj_t *eval_node(node_t *node, ctx_t *ctx);
 ctx_t *run_file(const char *filename, bool free_all)
 {
-	printf("run file: %s\n", filename);
+	dintr_printf("run file: %s\n", filename);
 	FILE *fptr = fopen(filename, "r");
 	if(!fptr)
 	{
@@ -161,13 +161,13 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		case nt_get:
 		{
 			node_get_t* n = (node_get_t*)node;
-			printf("create_get_node -> 0x%x\n", n);
-			printf("from node: %s\nval node: %s\n", string_node(n->from), string_node(n->value));
+			dintr_printf("create_get_node -> 0x%x\n", n);
+			dintr_printf("from node: %s\nval node: %s\n", string_node(n->from), string_node(n->value));
 			obj_t *from = eval_node(n->from, ctx);
 			obj_t *val;
 			if(n->value->type == nt_var)
 			{
-				printf("create string object '%s'\n", ((node_var_t*)n->value)->value);
+				dintr_printf("create string object '%s'\n", ((node_var_t*)n->value)->value);
 				val = create_str_obj(ctx, ((node_var_t*)n->value)->value);
 			}
 			else
@@ -184,7 +184,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				return NULL;
 			}
 
-			printf("Looking for '%s'.\n", ((obj_str_t*)val)->str);
+			dintr_printf("Looking for '%s'.\n", ((obj_str_t*)val)->str);
 
 			if(((obj_obj_t*)from)->count == 0)
 			{
@@ -192,16 +192,16 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				return NULL;
 			}
 
-			printf("wow such manyes %d\n", ((obj_obj_t*)from)->count);
-			printf("first 0x%x\n", ((obj_obj_t*)from)->first);
+			dintr_printf("wow such manyes %d\n", ((obj_obj_t*)from)->count);
+			dintr_printf("first 0x%x\n", ((obj_obj_t*)from)->first);
 
 			for(obj_obj_pair_t *p = ((obj_obj_t*)from)->first; p; p = p->n)
 			{
 				// TODO: Object == test
-				printf("wow such '%s'\n", ((obj_str_t*)p->l)->str);
+				dintr_printf("wow such '%s'\n", ((obj_str_t*)p->l)->str);
 				if(strcmp(((obj_str_t*)p->l)->str, ((obj_str_t*)val)->str) == 0)
 				{
-					puts("FOUND!");
+					dintr_puts("FOUND!");
 					return p->r;
 				}
 			}
@@ -261,7 +261,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		{
 			node_cll_t* nc = (node_cll_t*)node;
 			obj_t *o = eval_node(nc->value, ctx);
-			printf("CALL NODE\n");
+			dintr_printf("CALL NODE\n");
 			if(!o) return NULL;
 			if(o->type == ot_nat)
 			{
@@ -271,7 +271,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 					args[i] = eval_node(nc->args[i], ctx);
 				return ((obj_nat_t*)o)->nat(ctx, nc->count, args);
 			}
-			puts("FUNCTION CALL NON-NATIVE");
+			dintr_puts("FUNCTION CALL NON-NATIVE");
 
 			if(o->type != ot_fun)
 			{
@@ -300,7 +300,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			obj_t *v = eval_node(((obj_fun_t*)o)->body, &fctx);
 			obj_t *c = copy_obj(ctx, v);
 			free_context(&fctx);
-			puts("FUNCTION RETURN NON-NATIVE");
+			dintr_puts("FUNCTION RETURN NON-NATIVE");
 			return c;
 		}
 		case nt_seq:
