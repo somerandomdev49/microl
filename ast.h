@@ -1,6 +1,7 @@
 #ifndef MICROL_AST_H
 #define MICROL_AST_H
 #include <stdlib.h>
+#include <stdbool.h>
 #define alloc_node(x) malloc(sizeof(node_##x##_t))
 
 #define dast_printf(...) //printf(__VA_ARGS__)
@@ -27,11 +28,12 @@ typedef enum
 typedef struct
 {
 	node_type_t type;
+	bool allow_free;
 }  node_t;
 
 void free_node(node_t *node);
-
-
+void free_node_all(node_t *node);
+void free_node_imp(node_t *node, bool free_all);
 
 // NUM NODE //
 
@@ -46,6 +48,7 @@ node_num_t *create_num_node(double value)
 	dast_printf("create num node %f\n", value);
 	node_num_t *n = alloc_node(num);
 	n->node.type = nt_num;
+	n->node.allow_free = true;
 	n->value = value;
 	dast_puts("create num node ret");
 	return n;
@@ -66,6 +69,7 @@ node_var_t *create_var_node(char *value)
 {
 	node_var_t *n = alloc_node(var);
 	n->node.type = nt_var;
+	n->node.allow_free = true;
 	n->value = copy_string(value);
 	return n;
 }
@@ -85,6 +89,7 @@ node_imp_t *create_imp_node(char *value)
 {
 	node_imp_t *n = alloc_node(var);
 	n->node.type = nt_imp;
+	n->node.allow_free = true;
 	n->value = copy_string(value);
 	return n;
 }
@@ -119,6 +124,7 @@ node_bin_t *create_bin_node(char op, node_t *lhs, node_t *rhs)
 {
 	node_bin_t *n = alloc_node(bin);
 	n->node.type = nt_bin;
+	n->node.allow_free = true;
 	n->lhs = lhs; n->rhs = rhs;
 	n->value = op;
 	return n;
@@ -133,15 +139,19 @@ typedef struct
 {
 	node_t node;
 	char *name;
+	bool exported;
 	node_t *value;
 } node_let_t;
 
-node_let_t *create_let_node(char *name, node_t *value)
+node_let_t *create_let_node(char *name, node_t *value, bool exported)
 {
 	node_let_t *n = alloc_node(let);
 	n->node.type = nt_let;
+	n->node.allow_free = true;
 	n->value = value;
 	n->name = copy_string(name);
+	n->exported = exported;
+	if(exported) n->value->allow_free = false;
 	return n;
 }
 
@@ -160,6 +170,7 @@ node_iff_t *create_iff_node(node_t *cond, node_t *body, node_t *otherwise)
 {
 	node_iff_t *n = alloc_node(iff);
 	n->node.type = nt_iff;
+	n->node.allow_free = true;
 	n->cond = cond;
 	n->body = body;
 	n->otherwise = otherwise;
@@ -181,6 +192,7 @@ node_for_t *create_for_node(node_t *cond, node_t *body)
 {
 	node_for_t *n = alloc_node(for);
 	n->node.type = nt_for;
+	n->node.allow_free = true;
 	n->cond = cond;
 	n->body = body;
 	return n;
@@ -199,6 +211,7 @@ node_brk_t *create_brk_node()
 {
 	node_brk_t *n = alloc_node(brk);
 	n->node.type = nt_brk;
+	n->node.allow_free = true;
 	return n;
 }
 
@@ -216,6 +229,7 @@ node_ret_t *create_ret_node(node_t *value)
 {
 	node_ret_t *n = alloc_node(ret);
 	n->node.type = nt_ret;
+	n->node.allow_free = true;
 	n->value = value;
 	return n;
 };
@@ -235,6 +249,7 @@ node_fun_t *create_fun_node(node_t *value, size_t count, char *args[])
 {
 	node_fun_t *n = malloc(sizeof(node_fun_t) + count * sizeof(char*));
 	n->node.type = nt_fun;
+	n->node.allow_free = true;
 	n->value = value;
 	n->count = count;
 	for(size_t i = 0; i < n->count; ++i)
@@ -259,6 +274,7 @@ node_cll_t *create_cll_node(node_t *value, size_t count, node_t *args[])
 {
 	node_cll_t *n = malloc(sizeof(node_cll_t) + count * sizeof(char*));
 	n->node.type = nt_cll;
+	n->node.allow_free = true;
 	n->value = value;
 	n->count = count;
 	for(size_t i = 0; i < n->count; ++i)
@@ -280,6 +296,7 @@ node_set_t *create_set_node(char *name, node_t *value)
 {
 	node_set_t *n = alloc_node(set);
 	n->node.type = nt_set;
+	n->node.allow_free = true;
 	n->value = value;
 	n->name = copy_string(name);
 	return n;
@@ -302,6 +319,7 @@ node_get_t *create_get_node(node_t *from, node_t *value)
 	printf("create_get_node: 0x%x\n", n);
 	printf("val: '%s'\n", ((node_var_t*)value)->value);
 	n->node.type = nt_get;
+	n->node.allow_free = true;
 	n->from = from;
 	n->value = value;
 	return n;
@@ -326,6 +344,7 @@ node_seq_t *create_seq_node(bool new)
 {
 	node_seq_t *n = alloc_node(seq);
 	n->node.type = nt_seq;
+	n->node.allow_free = true;
 	n->head = NULL;
 	n->tail = NULL;
 	n->new = new;
@@ -348,18 +367,18 @@ void node_seq_add_node(node_seq_t *seq, node_t *node)
 	}
 }
 
-void node_seq_del_node(node_seq_t *seq)
+void node_seq_del_node(node_seq_t *seq, bool free_all)
 {
 	struct node_seq_cell_t *tmp = seq->head;
 	seq->head = seq->head->next;
-	free_node(tmp->value);
+	free_node_imp(tmp->value, free_all);
 	free(tmp);
 }
 
-void node_seq_del_all(node_seq_t *seq)
+void node_seq_del_all(node_seq_t *seq, bool free_all)
 {
 	while(seq->head)
-		node_seq_del_node(seq);
+		node_seq_del_node(seq, free_all);
 	seq->tail = NULL;
 }
 
@@ -368,9 +387,13 @@ void node_seq_del_all(node_seq_t *seq)
 
 // GENERAL //
 
-void free_node(node_t *node)
+void free_node(node_t *node) { free_node_imp(node, false); }
+void free_node_all(node_t *node) { free_node_imp(node, true); }
+
+void free_node_imp(node_t *node, bool free_all)
 {
 	if(!node) return;
+	if(!free_all && !node->allow_free) return;
 	switch(node->type)
 	{
 		case nt_num:
@@ -393,35 +416,35 @@ void free_node(node_t *node)
 		case nt_seq:
 		{
 			node_seq_t *n = (node_seq_t*)node;
-			node_seq_del_all(n);
+			node_seq_del_all(n, free_all);
 			break;
 		}
 		case nt_iff:
 		{
 			node_iff_t *n = (node_iff_t*)node;
-			free_node(n->cond); n->cond = NULL;
-			free_node(n->body); n->body = NULL;
-			free_node(n->otherwise); n->otherwise = NULL;
+			free_node_imp(n->cond, free_all); n->cond = NULL;
+			free_node_imp(n->body, free_all); n->body = NULL;
+			free_node_imp(n->otherwise, free_all); n->otherwise = NULL;
 			break;
 		}
 		case nt_for:
 		{
 			node_for_t *n = (node_for_t*)node;
-			free_node(n->cond); n->cond = NULL;
-			free_node(n->body); n->body = NULL;
+			free_node_imp(n->cond, free_all); n->cond = NULL;
+			free_node_imp(n->body, free_all); n->body = NULL;
 			break;
 		}
 		case nt_let:
 		{
 			node_let_t *n = (node_let_t*)node;
 			free(n->name);
-			free_node(n->value); n->value = NULL;
+			free_node_imp(n->value, free_all); n->value = NULL;
 			break;
 		}
 		case nt_fun:
 		{
 			node_fun_t *n = (node_fun_t*)node;
-			free_node(n->value); n->value = NULL;
+			free_node_imp(n->value, free_all); n->value = NULL;
 			for(size_t i = 0; i < n->count; ++i)
 				free(n->args[i]);
 			break;
@@ -429,10 +452,10 @@ void free_node(node_t *node)
 		case nt_cll:
 		{
 			node_cll_t *n = (node_cll_t*)node;
-			free_node(n->value); n->value = NULL;
+			free_node_imp(n->value, free_all); n->value = NULL;
 			for(size_t i = 0; i < n->count; ++i)
 			{
-				free_node(n->args[i]);
+				free_node_imp(n->args[i], free_all);
 				n->args[i] = NULL;
 			}
 			break;
@@ -441,22 +464,22 @@ void free_node(node_t *node)
 		{
 			node_set_t *n = (node_set_t*)node;
 			free(n->name); n->name = "{freed}";
-			free_node(n->value); n->value = NULL;
+			free_node_imp(n->value, free_all); n->value = NULL;
 			break;
 		}
 		case nt_get:
 		{
 			node_get_t *n = (node_get_t*)node;
-			free_node(n->from); n->from = NULL;
-			free_node(n->value); n->value = NULL;
+			free_node_imp(n->from, free_all); n->from = NULL;
+			free_node_imp(n->value, free_all); n->value = NULL;
 			printf("freeing get node at 0x%x\n", node);
 			break;
 		}
 		case nt_bin:
 		{
 			node_bin_t *n = (node_bin_t*)node;
-			free_node(n->lhs); n->lhs = NULL;
-			free_node(n->rhs); n->rhs = NULL;
+			free_node_imp(n->lhs, free_all); n->lhs = NULL;
+			free_node_imp(n->rhs, free_all); n->rhs = NULL;
 			break;
 		}
 		default:

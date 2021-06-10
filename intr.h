@@ -65,7 +65,7 @@ char *string_node(node_t *node)
 
 
 obj_t *eval_node(node_t *node, ctx_t *ctx);
-ctx_t *run_file(const char *filename)
+ctx_t *run_file(const char *filename, bool free_all)
 {
 	printf("run file: %s\n", filename);
 	FILE *fptr = fopen(filename, "r");
@@ -87,7 +87,7 @@ ctx_t *run_file(const char *filename)
 	del_all_tokens(&toks);
 	if(parser.fail)
 	{
-		if(n) free_node(n);
+		if(n) free_node_imp(n, free_all);
 		return NULL;
 	}
 
@@ -100,9 +100,9 @@ ctx_t *run_file(const char *filename)
 	stdlib_context(ctx);
 	dmain_puts("eval");
 	eval_node(n, ctx);
-	dmain_puts("output");
 	
-	if(n) free_node(n);
+	dmain_puts("free nodes");
+	if(n) free_node_imp(n, free_all);
 
 	for(size_t i = 0; i < ctx->count; ++i)
 	{
@@ -382,7 +382,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			strcat(dest, suffix);
 			dest[sizeof(prefix) + value_len + sizeof(suffix)] = '\0';
 
-			ctx_t *fileCtx = run_file(dest);
+			ctx_t *fileCtx = run_file(dest, false);
 			add_var(ctx, create_var(n->value, create_obj_obj(ctx, fileCtx)));
 			free_context(fileCtx);
 			dmain_puts("freeing ctx...");

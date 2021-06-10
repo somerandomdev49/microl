@@ -151,7 +151,7 @@ obj_t *create_obj_obj(ctx_t *ctx, ctx_t *from)
 	return (obj_t*)o;
 }
 
-// TODO: Can we just copy memory to the new context loc?
+// TODO: Can we just move memory to the new context loc?
 obj_t *copy_obj(ctx_t *ctx, obj_t *o)
 {
 	if(!o) return NULL;
@@ -192,7 +192,7 @@ void free_obj(obj_t *o)
 		case ot_obj:
 			// we don't need to free objects because they will/were
 			// freed by the context.
-			
+
 			// for(obj_obj_pair_t *p = ((obj_obj_t*)o)->first; p; p = p->n)
 			// {
 			// 	if(!p) break;

@@ -45,7 +45,7 @@ int cli(int argc, char **argv)
 	if(strcmp(command, "run") == 0)
 	{
 		if(args_count != 1) return help(program_name), 1;
-		free_context(run_file(args[0]));
+		free_context(run_file(args[0], true));
 	}
 	else if(strcmp(command, "help") == 0)
 	{

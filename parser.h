@@ -314,13 +314,24 @@ node_t *parse_expr(parser_t *p)
 			p_del(p); // skip "let"
 			token_t var = p_get(p);
 			if(var.type != tt_var)
-				return parser_error(p, "expected the name of the variable.");
+				return parser_error(p, "expected the name of the variable OR \"export\".");
+			
+			bool exp = false;
+			if(strcmp(var.value, "export") == 0)
+			{
+				exp = true;
+				var = p_get(p);
+				if(var.type != tt_var)
+					return parser_error(p, "expected the name of the variable.");
+			}
+
 			dparse_printf("var: %s\n", var.value);
-			if(p_get(p).type != tt_eql)
+			if(p_peek(p).type != tt_eql)
 				return parser_error(p, "expected an equals sign.");
+			p_get(p);
 
 			node_t *expr = parse_expr(p);
-			return (node_t*)create_let_node(var.value, expr);
+			return (node_t*)create_let_node(var.value, expr, exp);
 
 		}
 
