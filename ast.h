@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #define alloc_node(x) malloc(sizeof(node_##x##_t))
 
-#define dast_printf(...) //printf(__VA_ARGS__)
-#define dast_puts(...) //puts(__VA_ARGS__)
+#define dast_printf(...) printf(__VA_ARGS__)
+#define dast_puts(...) puts(__VA_ARGS__)
 
 char *copy_string(const char *other)
 {
@@ -151,7 +151,7 @@ node_let_t *create_let_node(char *name, node_t *value, bool exported)
 	n->value = value;
 	n->name = copy_string(name);
 	n->exported = exported;
-	if(exported) n->value->allow_free = false;
+	if(exported && n->value->type == nt_fun) n->value->allow_free = false;
 	return n;
 }
 
@@ -392,6 +392,7 @@ void free_node_all(node_t *node) { free_node_imp(node, true); }
 
 void free_node_imp(node_t *node, bool free_all)
 {
+	dast_puts("FREE NODE");
 	if(!node) return;
 	if(!free_all && !node->allow_free) return;
 	switch(node->type)

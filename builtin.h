@@ -1,5 +1,8 @@
 #ifndef MICROL_STDLIB_H
 #define MICROL_STDLIB_H
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 #include "ctx.h"
 
 void stdlib_error_arg_count(const char *from, size_t expected, size_t got)
@@ -56,8 +59,8 @@ obj_t *stdlib_decl_write(ctx_t *ctx, size_t count, obj_t *args[])
 void stdlib_context(ctx_t *ctx)
 {
     if(!ctx) return;
-    add_var(ctx, create_var("__write", create_nat_obj(ctx, stdlib_decl_write)));
-    add_var(ctx, create_var("tostring", create_nat_obj(ctx, stdlib_decl_tostring)));
+    add_var(ctx, create_var("__write", create_nat_obj(ctx, stdlib_decl_write), false));
+    add_var(ctx, create_var("tostring", create_nat_obj(ctx, stdlib_decl_tostring), false));
 }
 
 #endif//MICROL_STDLIB_H

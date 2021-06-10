@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "stdlib.h"
+#include "builtin.h"
 #include "token.h"
 #include "parser.h"
 #include "lexer.h"
@@ -104,11 +104,12 @@ ctx_t *run_file(const char *filename, bool free_all)
 	dmain_puts("free nodes");
 	if(n) free_node_imp(n, free_all);
 
+	dmain_printf("%d variables in total\n", ctx->count);
 	for(size_t i = 0; i < ctx->count; ++i)
 	{
-		printf("VARIABLE %s!\n", ctx->vars[i]);
+		dmain_printf("VARIABLE %s!\n", ctx->vars[i].name);
 	}
-	puts("-- end file eval --");
+	dmain_puts("-- end file eval --");
 	return ctx;
 }
 
@@ -214,7 +215,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		{
 			node_let_t* nl = (node_let_t*)node;
 			obj_t *val = eval_node(nl->value, ctx);
-			add_var(ctx, create_var(nl->name, val));
+			add_var(ctx, create_var(nl->name, val, nl->exported));
 			return val;
 		}
 		case nt_iff:
@@ -290,11 +291,12 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				return NULL;
 			}
 			ctx_t fctx = create_context(ctx);
-			add_var(&fctx, create_var("@", o));
+			add_var(&fctx, create_var("@", o, false));
 			for(size_t i = 0; i < nc->count; ++i)
 				add_var(&fctx, create_var(
 					((obj_fun_t*)o)->args[i],
-					eval_node(nc->args[i], ctx)));
+					eval_node(nc->args[i], ctx),
+					false));
 			obj_t *v = eval_node(((obj_fun_t*)o)->body, &fctx);
 			obj_t *c = copy_obj(ctx, v);
 			free_context(&fctx);
@@ -383,7 +385,8 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			dest[sizeof(prefix) + value_len + sizeof(suffix)] = '\0';
 
 			ctx_t *fileCtx = run_file(dest, false);
-			add_var(ctx, create_var(n->value, create_obj_obj(ctx, fileCtx)));
+			dintr_puts("ran file");
+			add_var(ctx, create_var(n->value, create_obj_obj(ctx, fileCtx), false));
 			free_context(fileCtx);
 			dmain_puts("freeing ctx...");
 			break;

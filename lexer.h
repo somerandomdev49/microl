@@ -20,11 +20,8 @@ token_list_t lex(FILE *fptr)
 		while(isspace(c)) c = getc(fptr);
 		while(c == '#')
 		{
-			puts("COMMENT!!!!!!!!!!!");
-			while(c != '\n' && c != EOF) {
-				printf("COMMENT CHARACTER: '%c'", c);
+			while(c != '\n' && c != EOF)
 				c = getc(fptr);
-			}
 			if(c == '\n') c = getc(fptr);
 		}
 		while(isspace(c)) c = getc(fptr);

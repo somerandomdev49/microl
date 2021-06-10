@@ -36,6 +36,7 @@ typedef struct
 {
 	char *name;
 	obj_t *value;
+	bool exported;
 } var_t;
 
 struct ctx_t
@@ -140,6 +141,7 @@ obj_t *create_obj_obj(ctx_t *ctx, ctx_t *from)
 	obj_obj_pair_t **p = &(o->first);
 	for(size_t i = 0; i < from->count; ++i)
 	{
+		if(!from->vars[i].exported) continue;
 		*p = new_pair(
 			create_str_obj(ctx, from->vars[i].name),
 			copy_obj(ctx, from->vars[i].value),
@@ -270,9 +272,9 @@ void print_obj(obj_t *o)
 /* Beware that create_var allocates
    the name and copies from the argument.
    (see free_var) */
-var_t create_var(char *name, obj_t *value)
+var_t create_var(char *name, obj_t *value, bool exp)
 {
-	var_t v = (var_t){ copy_string(name), value };
+	var_t v = (var_t){ copy_string(name), value, exp };
 	return v;
 };
 
