@@ -1,2 +1,3 @@
 import io
-io.write(1)
+import fib
+io.write(fib.fib(20))

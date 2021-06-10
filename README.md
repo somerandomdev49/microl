@@ -72,14 +72,23 @@ The value printed is the value of the `output` variable.
 * `main.c` - the main file. (cli + running)
 
 ### TODO:
+* [ ] make modules a separate object that can hold a whole context!.
+* [ ] add parser support for strings.
+* [ ] add parser support for nil.
+* [ ] unify object allocation functions.
+* [ ] change `get != ... then error` to `peek != ... then error else del`
+* [ ] make this a compiler to custom bytecode
+* [ ] optimise
 * [x] ~~parse operators other than `+` and `*` (simple to fix, but im lazy).~~
 * [x] ~~add if and loops~~
 * [x] ~~change from `double` to some kind of `obj_t` for the interpreter.~~
 * [x] ~~add functions.~~
 * [x] add stdlib - *in progress*
-* [ ] add modules! - *in progress*
-* [ ] unify object allocation functions.
+* [x] ~~add modules!~~
 * [x] ~~make object values separate. a simple number takes up a lot of memory!~~
-* [ ] add parser support for strings.
-* [ ] add parser support for nil.
-* [ ] change `get != ... then error` to `peek != ... then error else del`
+
+### Long-Term goals:
+* Compile to WASM
+* Compile to x86
+* LLVM for C?
+* Other VMs.

@@ -68,7 +68,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx);
 ctx_t *run_file(const char *filename, bool free_all)
 {
 	dintr_printf("run file: %s\n", filename);
-	FILE *fptr = fopen(filename, "r");
+	FILE *fptr = fopen(filename, "rb"); // windows issue! 
 	if(!fptr)
 	{
 		fprintf(stderr, "error -> file: could not run '%s'.\n", filename);
