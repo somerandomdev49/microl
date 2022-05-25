@@ -1,0 +1,2 @@
+let export x = function()
+	function() __write(tostring(0))

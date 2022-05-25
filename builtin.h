@@ -28,14 +28,11 @@ obj_t *stdlib_decl_tostring(ctx_t *ctx, size_t count, obj_t *args[])
         stdlib_error_arg_count("tostring()", 1, count);
         return NULL;
     }
-    char *str = malloc(MICROL_STR_OBJ_LIM);
-    //str[0] = 0;
-    string_obj((char**)&str, MICROL_STR_OBJ_LIM, args[0]);
-	//printf("oh look here's my string: \"%s\"\n", str);
-    obj_t *o = create_str_obj(ctx, str);
-	//printf("tostring() = '%s'", str);
-    free(str);
-    return o;
+	int sz = string_obj(NULL, 0, args[0]);
+	if(sz == 0) return create_str_obj(ctx, "");
+    char str[sz + 1];
+	string_obj(str, sz + 1, args[0]);
+    return create_str_obj(ctx, str);
 }
 
 obj_t *stdlib_decl_write(ctx_t *ctx, size_t count, obj_t *args[])

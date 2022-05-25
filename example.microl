@@ -1,3 +1,6 @@
-import io
-import fib
-io.write(fib.fib(20))
+# import io
+# import fib
+# io.write(fib.fib(20))
+import test
+let y = test.x()
+y()

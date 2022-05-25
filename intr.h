@@ -77,13 +77,13 @@ ctx_t *run_file(const char *filename, bool free_all)
 	token_list_t toks = lex(fptr);
 	fclose(fptr);
 
-	dmain_puts("creating parser...");
+	dintr_puts("creating parser...");
 	parser_t parser = create_parser(&toks);
 
-	dmain_puts("parsing...");
+	dintr_puts("parsing...");
 	node_t *n = parse(&parser);
 
-	dmain_puts("deleting excess tokens...");
+	dintr_puts("deleting excess tokens...");
 	del_all_tokens(&toks);
 	if(parser.fail)
 	{
@@ -93,23 +93,23 @@ ctx_t *run_file(const char *filename, bool free_all)
 
 
 	// TODO Variables aren't added to `ctx` itself?
-	dmain_puts("context init");
+	dintr_puts("context init");
 	ctx_t *ctx = malloc(sizeof(ctx_t));
 	*ctx = create_context(NULL);
-	dmain_puts("stdlib init");
+	dintr_puts("stdlib init");
 	stdlib_context(ctx);
-	dmain_puts("eval");
+	dintr_puts("eval");
 	eval_node(n, ctx);
 	
-	dmain_puts("free nodes");
+	dintr_puts("free nodes");
 	if(n) free_node_imp(n, free_all);
 
-	dmain_printf("%d variables in total\n", ctx->count);
+	dintr_printf("%d variables in total\n", ctx->count);
 	for(size_t i = 0; i < ctx->count; ++i)
 	{
-		dmain_printf("VARIABLE %s!\n", ctx->vars[i].name);
+		dintr_puts("VARIABLE %s!\n", ctx->vars[i].name);
 	}
-	dmain_puts("-- end file eval --");
+	dintr_puts("-- end file eval --");
 	return ctx;
 }
 
@@ -255,7 +255,7 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 		case nt_fun:
 		{
 			node_fun_t* ni = (node_fun_t*)node;
-			return create_fun_obj(ctx, ni->count, ni->args, ni->value);
+			return create_fun_obj(ctx, ni->count, ni->args, ni->value, ctx);
 		}
 		case nt_cll:
 		{
@@ -290,7 +290,8 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 				);
 				return NULL;
 			}
-			ctx_t fctx = create_context(ctx);
+			ctx_t *bctx = ((obj_fun_t*)o)->ctx;
+			ctx_t fctx = create_context(bctx);
 			add_var(&fctx, create_var("@", o, false));
 			for(size_t i = 0; i < nc->count; ++i)
 				add_var(&fctx, create_var(
@@ -388,13 +389,14 @@ obj_t *eval_node(node_t *node, ctx_t *ctx)
 			dintr_puts("ran file");
 			add_var(ctx, create_var(n->value, create_obj_obj(ctx, fileCtx), false));
 			free_context(fileCtx);
-			dmain_puts("freeing ctx...");
+			dintr_puts("freeing ctx...");
 			break;
 		}
 		default:
 			fprintf(stderr, "error: eval -> not implemented %d.\n", node->type);
 			return NULL;
 	}
+	return NULL;
 }
 
 

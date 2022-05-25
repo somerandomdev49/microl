@@ -1,6 +1,7 @@
 #ifndef MICROL_CTX_H
 #define MICROL_CTX_H
 #include "ast.h"
+#include <stdio.h>
 
 #define dctx_printf(...) //printf(__VA_ARGS__)
 #define dctx_puts(...) //puts(__VA_ARGS__)
@@ -23,7 +24,7 @@ typedef struct { obj_header_t; } obj_t;
 obj_typedef(num, double num;);
 obj_typedef(str, char *str;);
 obj_typedef(nat, obj_t *(*nat)(ctx_t*, size_t, obj_t**););
-obj_typedef(fun, size_t count; char **args; node_t *body;);
+obj_typedef(fun, size_t count; char **args; node_t *body; ctx_t *ctx);
 typedef struct t_001 { obj_t *l, *r; struct t_001 *n; } obj_obj_pair_t;
 obj_obj_pair_t *new_pair(obj_t *l, obj_t *r, obj_obj_pair_t *n)
 {
@@ -104,12 +105,13 @@ obj_t *create_str_obj(ctx_t *ctx, const char *value)
 	return (obj_t*)o;
 }
 
-obj_t *create_fun_obj(ctx_t *ctx, size_t count, char **args, node_t *body)
+obj_t *create_fun_obj(ctx_t *ctx, size_t count, char **args, node_t *body, ctx_t *bctx)
 {
 	obj_fun_t *o = alloc_obj(fun);
 	o->type = ot_fun;
 	o->count = count;
 	o->body = body;
+	o->ctx = bctx;
 	o->args = malloc(sizeof(char*) * count);
 	for(size_t i = 0; i < count; ++i)
 		o->args[i] = copy_string(args[i]);
@@ -172,7 +174,8 @@ obj_t *copy_obj(ctx_t *ctx, obj_t *o)
 			return create_fun_obj(ctx,
 				((obj_fun_t*)o)->count,
 				((obj_fun_t*)o)->args,
-				((obj_fun_t*)o)->body);
+				((obj_fun_t*)o)->body,
+				((obj_fun_t*)o)->ctx);
 		default:
             fprintf(stderr, "error: eval -> copy obj not implemented\n");
 			return NULL;
@@ -232,22 +235,22 @@ char *string_type(char type)
 
 
 // At most 'bufsz' bytes are written to buf.
-void string_obj(char **buf, size_t bufsz, obj_t *o)
+int string_obj(char *buf, size_t bufsz, obj_t *o)
 {
 	//snprintf(*buf, bufsz, "[ internal error ]");
 	//return;
-	if(!o) return;
+	if(!o) return 0;
     switch(o->type) {
-        case ot_nil: snprintf(*buf, bufsz, "[ nil ]"); break;
-        case ot_fun: snprintf(*buf, bufsz, "[ function ]"); break;
-        case ot_nat: snprintf(*buf, bufsz, "[ native ]"); break;
+        case ot_nil: return snprintf(buf, bufsz, "[ nil ]"); break;
+        case ot_fun: return snprintf(buf, bufsz, "[ function ]"); break;
+        case ot_nat: return snprintf(buf, bufsz, "[ native ]"); break;
         case ot_num:
 			// printf("hmmmm: %f\n", o->value.num);
-			snprintf(*buf, bufsz, "%f", ((obj_num_t*)o)->num); break;
-        case ot_str: snprintf(*buf, bufsz, "%s", ((obj_str_t*)o)->str); break;
+			return snprintf(buf, bufsz, "%f", ((obj_num_t*)o)->num); break;
+        case ot_str: return snprintf(buf, bufsz, "%s", ((obj_str_t*)o)->str); break;
         default:
             fprintf(stderr, "error: eval -> string obj %d not implemented\n", o->type);
-			snprintf(*buf, bufsz, "[ internal error ]");
+			return snprintf(buf, bufsz, "[ internal error ]");
 			break;
     }
 }
@@ -255,11 +258,11 @@ void string_obj(char **buf, size_t bufsz, obj_t *o)
 void fprint_obj(FILE *f, obj_t *o)
 {
 	if(!o) return;
-	// TODO: Remove restriction on amount of bytes that can be written.
-    char *str = malloc(MICROL_STR_OBJ_LIM);
-	string_obj((char**)&str, MICROL_STR_OBJ_LIM, o);
+	int sz = string_obj(NULL, 0, o);
+	if(sz == 0) return;
+    char str[sz + 1];
+	string_obj(str, sz + 1, o);
 	fprintf(f, "%s", str);
-	free(str);
 }
 
 void print_obj(obj_t *o)

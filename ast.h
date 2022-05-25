@@ -2,6 +2,7 @@
 #define MICROL_AST_H
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #define alloc_node(x) malloc(sizeof(node_##x##_t))
 
 #define dast_printf(...) //printf(__VA_ARGS__)
